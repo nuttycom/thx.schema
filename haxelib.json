@@ -1,0 +1,14 @@
+{
+  "name": "thx.schema",
+  "url": "https://github.com/nuttycom/thx.schema",
+  "license": "MIT",
+  "classPath": "src",
+  "tags": ["thx", "dynamic", "schema", "validation"],
+  "description": "Object parsing and validation library for Haxe.",
+  "releasenote": "Initial Release",
+  "version": "0.0.1",
+  "contributors": ["nuttycom"],
+  "dependencies": {
+    "thx.core": ""
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "dependencies": [
+    {
+      "name": "thx.core",
+      "type": "git",
+      "dir": "",
+      "ref": "master",
+      "url": "git@github.com:fponticelli/thx.core"
+    },
+    {
+      "name": "utest",
+      "type": "haxelib",
+      "version": "1.3.10"
+    }
+  ]
+}
