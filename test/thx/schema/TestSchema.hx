@@ -9,6 +9,7 @@ import thx.schema.Schema;
 import thx.schema.Schema.SchemaDSL.*;
 
 using thx.schema.Schema.SchemaExtensions;
+using thx.schema.SchemaDynamicExtensions;
 using thx.Eithers;
 
 class TSimple {
