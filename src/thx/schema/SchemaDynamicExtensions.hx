@@ -22,22 +22,9 @@ class SchemaDynamicExtensions {
       case FloatSchema: Dynamics.parseFloat(v);
       case StrSchema:   Dynamics.parseString(v);
       case BoolSchema:  Dynamics.parseBool(v);
-
-      case ObjectSchema(propSchema):
-        parseObject(propSchema, v);
-
-      case ArraySchema(elemSchema): 
-        return switch Type.typeof(v) {
-          case TClass(name) :
-            switch Type.getClassName(Type.getClass(v)) {
-              case "Array": (v: Array<Dynamic>).traverseValidation(parse.bind(elemSchema, _), Nel.semigroup());
-              case other: failureNel('$v is not array-valued (type resolved to $other)');
-            };
-          case other: failureNel('$v is not array-valued (type resolved to $other)');
-        };
-
-      case CoYoneda(base, f): 
-        parse(base, v).map(f);
+      case ObjectSchema(propSchema): parseObject(propSchema, v);
+      case ArraySchema(elemSchema):  Dynamics.parseArray(v, parse.bind(elemSchema, _));
+      case CoYoneda(base, f):        parse(base, v).map(f);
     };
   }
 
