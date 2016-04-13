@@ -41,18 +41,18 @@ class TestSchema {
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
 
-  static var oxs = object(required("x", int).map(TSimple.new));
+  static var oxs = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
 
   static var arrs = array(oxs);
 
   static var objs = object(
     ap5(
       TComplex.new,
-      required("i", int), 
-      required("f", float), 
-      required("b", bool), 
-      required("a", arrs), 
-      optional("o", oxs)
+      required("i", int, function(tc: TComplex) return tc.i), 
+      required("f", float, function(tc: TComplex) return tc.f), 
+      required("b", bool, function(tc: TComplex) return tc.b), 
+      required("a", arrs, function(tc: TComplex) return tc.a), 
+      optional("o", oxs, function(tc: TComplex) return tc.o)
     )
   );
 
