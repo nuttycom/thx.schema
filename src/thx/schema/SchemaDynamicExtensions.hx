@@ -1,5 +1,6 @@
 package thx.schema;
 
+import thx.Functions.identity;
 import thx.Options;
 import thx.Nel;
 import thx.Validation;
@@ -23,7 +24,7 @@ class SchemaDynamicExtensions {
       case StrSchema:   Dynamics.parseString(v);
       case BoolSchema:  Dynamics.parseBool(v);
       case ObjectSchema(propSchema): parseObject(propSchema, v);
-      case ArraySchema(elemSchema):  Dynamics.parseArray(v, parse.bind(elemSchema, _));
+      case ArraySchema(elemSchema):  Dynamics.parseArray(v, parse.bind(elemSchema, _), identity);
       case CoYoneda(base, f):        parse(base, v).map(f);
     };
   }
