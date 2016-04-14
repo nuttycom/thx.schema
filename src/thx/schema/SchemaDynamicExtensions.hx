@@ -4,28 +4,24 @@ import haxe.ds.Option;
 import thx.schema.SPath;
 
 import thx.Objects;
-import thx.Options;
-import thx.Monoid;
 import thx.Nel;
 import thx.Validation;
 import thx.Validation.*;
 import thx.Types;
-import thx.Unit;
 import thx.fp.Dynamics;
 import thx.fp.Dynamics.*;
 import thx.fp.Functions.*;
-import thx.fp.Writer;
+
 using thx.Arrays;
 using thx.Eithers;
 using thx.Functions;
-using thx.Iterators;
 using thx.Maps;
 using thx.Options;
 using thx.Validation.ValidationExtensions;
 
 import thx.schema.Schema;
-import thx.schema.Schema.SchemaDSL.*;
-using thx.schema.Schema.SchemaExtensions;
+import thx.schema.SchemaDSL.*;
+using thx.schema.SchemaExtensions;
 
 class SchemaDynamicExtensions {
   public static function parse<A>(schema: Schema<A>, v: Dynamic): VNel<ParseError, A> {
@@ -103,3 +99,16 @@ class SchemaDynamicExtensions {
     return failureNel(new ParseError(message, path));
 }
 
+class ParseError {
+  public var message(default, null): String;
+  public var path(default, null): SPath;
+
+  public function new(message: String, path: SPath) {
+    this.message = message;
+    this.path = path;
+  }
+
+  public function toString(): String {
+    return '${path.toString()}: ${message}';
+  }
+}

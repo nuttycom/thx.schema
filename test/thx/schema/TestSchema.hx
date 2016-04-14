@@ -6,9 +6,9 @@ import thx.Either;
 import utest.Assert;
 
 import thx.schema.Schema;
-import thx.schema.Schema.SchemaDSL.*;
+import thx.schema.SchemaDSL.*;
 
-using thx.schema.Schema.SchemaExtensions;
+using thx.schema.SchemaExtensions;
 using thx.schema.SchemaDynamicExtensions;
 using thx.Eithers;
 
