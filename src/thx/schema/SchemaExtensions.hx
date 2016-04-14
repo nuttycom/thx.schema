@@ -31,26 +31,16 @@ class ObjectSchemaExtensions {
   }
 
   public static function map<O, A, B>(s: ObjectBuilder<O, A>, f: A -> B): ObjectBuilder<O, B> {
-    // helper function used to unpack existential type I
-    inline function go<I>(s: PropSchema<O, I>, k: ObjectBuilder<O, I -> A>): ObjectBuilder<O, B> {
-      return Ap(s, map(k, f.compose));
-    }
-
     return switch s {
       case Pure(a): Pure(f(a));
-      case Ap(s, k): go(s, k);
+      case Ap(s, k): Ap(s, map(k, f.compose));
     };
   }
 
   public static function ap<O, A, B>(s: ObjectBuilder<O, A>, f: ObjectBuilder<O, A -> B>): ObjectBuilder<O, B> {
-    // helper function used to unpack existential type I
-    inline function go<I>(si: PropSchema<O, I>, ki: ObjectBuilder<O, I -> (A -> B)>): ObjectBuilder<O, B> {
-      return Ap(si, ap(s, map(ki, flip)));
-    }
-
     return switch f {
       case Pure(g): map(s, g);
-      case Ap(fs, fk): go(fs, fk);
+      case Ap(fs, fk): Ap(fs, ap(s, map(fk, flip)));
     };
   }
 
