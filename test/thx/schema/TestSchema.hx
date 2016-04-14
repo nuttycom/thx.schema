@@ -36,25 +36,36 @@ class TComplex {
   }
 }
 
+enum TEnum {
+  X(o: TSimple);
+  Y(s: String);
+}
+
 class TestSchema {
   static var ox3 = { x : 3 };
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
 
-  static var oxs = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
+  static var simpleSchema = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
 
-  static var arrs = array(oxs);
+  static var arrs = array(simpleSchema);
 
-  static var objs = object(
+  static var complexSchema = object(
     ap5(
       TComplex.new,
       required("i", int, function(tc: TComplex) return tc.i), 
       required("f", float, function(tc: TComplex) return tc.f), 
       required("b", bool, function(tc: TComplex) return tc.b), 
       required("a", arrs, function(tc: TComplex) return tc.a), 
-      optional("o", oxs, function(tc: TComplex) return tc.o)
+      optional("o", simpleSchema, function(tc: TComplex) return tc.o)
     )
   );
+
+  static var enumSchema = oneOf([
+    alt("simple", simpleSchema, function(s) return X(s), function(e: TEnum) return switch e { case X(s): Some(s); case _: None; }),
+    alt("str", string, function(s) return Y(s), function(e: TEnum) return switch e { case Y(s): Some(s); case _: None; })
+  ]);
+
 
   public function new() { }
 
@@ -63,7 +74,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))), 
-      objs.parse(obj)
+      complexSchema.parse(obj)
     );
   }
 
@@ -72,7 +83,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)), 
-      objs.parse(obj)
+      complexSchema.parse(obj)
     );
   }
 
@@ -101,6 +112,21 @@ class TestSchema {
     Assert.isTrue(string.parse(1).either.isLeft());
     Assert.isTrue(string.parse(1.0).either.isLeft());
     Assert.isTrue(string.parse(true).either.isLeft());
+  }
+
+  public function testParseEnum() {
+    var x = { simple: { x: 3 } };
+    var y = { str: "hi" };
+
+    Assert.same(
+      Right(X(new TSimple(3))),
+      enumSchema.parse(x)
+    );
+
+    Assert.same(
+      Right(Y("hi")),
+      enumSchema.parse(y)
+    );
   }
 }
 

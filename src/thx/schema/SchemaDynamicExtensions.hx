@@ -51,7 +51,7 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, g)]:
-              parseAlternative(base, v, path / id).map(f);
+              parseProperty(v, id, parse0.bind(base, _, path / id), ParseError.new.bind(_, path)).map(f);
 
             case other:
               if (other.length == 0) {
@@ -67,18 +67,6 @@ class SchemaDynamicExtensions {
 
       case IsoSchema(base, f, _): 
         parse0(base, v, path).map(f);
-    };
-  }
-
-  private static function parseAlternative<A>(schema0: Schema<A>, value: Dynamic, path: SPath): VNel<ParseError, A> {
-    return if (Types.isAnonymousObject(value)) {
-      switch schema0 {
-        case ObjectSchema(_): parse0(schema0, value, path); // object properties are at the top level
-        case IsoSchema(base, f, _): parseAlternative(base, value, path).map(f);
-        case other: parse0(other, value, path); 
-      }
-    } else {
-      fail('Value $value is not a JSON object.', path);
     };
   }
 
