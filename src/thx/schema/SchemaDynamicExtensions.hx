@@ -34,6 +34,7 @@ class SchemaDynamicExtensions {
       case FloatSchema: parseFloat(v).leftMapNel(errAt(path));
       case StrSchema:   parseString(v).leftMapNel(errAt(path));
       case BoolSchema:  parseBool(v).leftMapNel(errAt(path));
+      case NullSchema:  successNel(null);
 
       case ObjectSchema(propSchema): parseObject(propSchema, v, path);
       case ArraySchema(elemSchema):  parseArrayIndexed(v, function(v, i) return parse0(elemSchema, v, path * i), errAt(path));
@@ -47,7 +48,8 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, g)]:
-              parseProperty(v, id, parse0.bind(base, _, path / id), ParseError.new.bind(_, path)).map(f);
+              var parser = if (isoNull(base)) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
+              parser(v, id, parse0.bind(base, _, path / id)).map(f);
 
             case other:
               if (other.length == 0) {
@@ -90,6 +92,14 @@ class SchemaDynamicExtensions {
     } else {
       fail('$v is not an anonymous object structure}).', path);
     };
+  }
+
+  public static function isoNull<A>(schema: Schema<A>): Bool {
+    return switch schema {
+      case NullSchema: true;
+      case IsoSchema(base, _, _): isoNull(base);
+      case _: false;
+    }
   }
 
   inline static public function errAt<A>(path: SPath): String -> ParseError

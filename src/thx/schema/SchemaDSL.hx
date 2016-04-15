@@ -3,6 +3,7 @@ package thx.schema;
 import haxe.ds.Option;
 import thx.Functions;
 import thx.Functions.identity;
+import thx.fp.Functions.const;
 
 import thx.schema.Schema;
 using thx.schema.SchemaExtensions;
@@ -31,6 +32,9 @@ class SchemaDSL {
 
   public static function iso<A, B>(base: Schema<A>, f: A -> B, g: B -> A): Schema<B>
     return IsoSchema(base, f, g);
+
+  public static function constant<A>(a: A): Schema<A>
+    return iso(NullSchema, const(a), const(null));
 
   //
   // Constructors for oneOf alternatives

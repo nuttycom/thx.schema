@@ -12,6 +12,7 @@ enum Schema<A> {
   FloatSchema: Schema<Float>;
   IntSchema: Schema<Int>;
   StrSchema: Schema<String>;
+  NullSchema: Schema<Void>;
 
   ObjectSchema<B>(propSchema: ObjectBuilder<B, B>): Schema<B>;
   ArraySchema<B>(elemSchema: Schema<B>): Schema<Array<B>>;

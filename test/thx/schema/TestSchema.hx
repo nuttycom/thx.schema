@@ -37,8 +37,9 @@ class TComplex {
 }
 
 enum TEnum {
-  X(o: TSimple);
-  Y(s: String);
+  EX(o: TSimple);
+  EY(s: String);
+  EZ;
 }
 
 class TestSchema {
@@ -62,8 +63,9 @@ class TestSchema {
   );
 
   static var enumSchema = oneOf([
-    alt("simple", simpleSchema, function(s) return X(s), function(e: TEnum) return switch e { case X(s): Some(s); case _: None; }),
-    alt("str", string, function(s) return Y(s), function(e: TEnum) return switch e { case Y(s): Some(s); case _: None; })
+    alt("ex", simpleSchema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
+    alt("ey", string,       function(s) return EY(s), function(e: TEnum) return switch e { case EY(s): Some(s); case _: None; }),
+    alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
   ]);
 
 
@@ -115,18 +117,14 @@ class TestSchema {
   }
 
   public function testParseEnum() {
-    var x = { simple: { x: 3 } };
-    var y = { str: "hi" };
+    var x = { ex: { x: 3 } };
+    var y = { ey: "hi" };
+    var z = { ez: null };
 
-    Assert.same(
-      Right(X(new TSimple(3))),
-      enumSchema.parse(x)
-    );
-
-    Assert.same(
-      Right(Y("hi")),
-      enumSchema.parse(y)
-    );
+    Assert.same(Right(EX(new TSimple(3))), enumSchema.parse(x));
+    Assert.same(Right(EY("hi")), enumSchema.parse(y));
+    trace(enumSchema.parse(z));
+    Assert.same(Right(EZ), enumSchema.parse(z));
   }
 }
 
