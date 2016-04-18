@@ -1,6 +1,7 @@
 package thx.schema;
 
 import haxe.ds.Option;
+import thx.Unit;
 
 /**
  * A GADT describing the elements of a JSON-compatible Haxe object schema.
@@ -12,7 +13,7 @@ enum Schema<A> {
   FloatSchema: Schema<Float>;
   IntSchema: Schema<Int>;
   StrSchema: Schema<String>;
-  NullSchema: Schema<Void>;
+  UnitSchema: Schema<Unit>;
 
   ObjectSchema<B>(propSchema: ObjectBuilder<B, B>): Schema<B>;
   ArraySchema<B>(elemSchema: Schema<B>): Schema<Array<B>>;

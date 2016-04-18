@@ -8,6 +8,7 @@ import thx.Nel;
 import thx.Validation;
 import thx.Validation.*;
 import thx.Types;
+import thx.Unit;
 import thx.fp.Dynamics;
 import thx.fp.Dynamics.*;
 import thx.fp.Functions.*;
@@ -34,21 +35,22 @@ class SchemaDynamicExtensions {
       case FloatSchema: parseFloat(v).leftMapNel(errAt(path));
       case StrSchema:   parseString(v).leftMapNel(errAt(path));
       case BoolSchema:  parseBool(v).leftMapNel(errAt(path));
-      case NullSchema:  successNel(null);
+      case UnitSchema:  successNel(unit);
 
       case ObjectSchema(propSchema): parseObject(propSchema, v, path);
       case ArraySchema(elemSchema):  parseArrayIndexed(v, function(v, i) return parse0(elemSchema, v, path * i), errAt(path));
 
       case OneOfSchema(alternatives):
-        // The alternative is encoded as an object containing a null-valued field that identifies
-        // the alternative in use.
+        // The alternative is encoded as an object containing single field, where the
+        // name of the field is the constructor and the body is parsed by the schema
+        // for that alternative.
         if (Types.isAnonymousObject(v)) {
           var fields = Objects.fields(v);
           var alts = fields.flatMap(function(name) return alternatives.filter.fn(_.id() == name));
 
           switch alts {
             case [Prism(id, base, f, g)]:
-              var parser = if (isoNull(base)) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
+              var parser = if (isConstant(base)) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
               parser(v, id, parse0.bind(base, _, path / id)).map(f);
 
             case other:
@@ -94,10 +96,10 @@ class SchemaDynamicExtensions {
     };
   }
 
-  public static function isoNull<A>(schema: Schema<A>): Bool {
+  public static function isConstant<A>(schema: Schema<A>): Bool {
     return switch schema {
-      case NullSchema: true;
-      case IsoSchema(base, _, _): isoNull(base);
+      case UnitSchema: true;
+      case IsoSchema(base, _, _): isConstant(base);
       case _: false;
     }
   }
