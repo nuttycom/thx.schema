@@ -2,6 +2,7 @@ package thx.schema;
 
 import haxe.ds.Option;
 import thx.Either;
+using thx.Functions;
 
 import utest.Assert;
 
@@ -47,18 +48,18 @@ class TestSchema {
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
 
-  static var simpleSchema = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
+  static var simpleSchema = object(required("x", int).map(TSimple.new).contramap.fn(_.x));
 
   static var arrs = array(simpleSchema);
 
   static var complexSchema = object(
     ap5(
       TComplex.new,
-      required("i", int, function(tc: TComplex) return tc.i), 
-      required("f", float, function(tc: TComplex) return tc.f), 
-      required("b", bool, function(tc: TComplex) return tc.b), 
-      required("a", arrs, function(tc: TComplex) return tc.a), 
-      optional("o", simpleSchema, function(tc: TComplex) return tc.o)
+      required("i", int).contramap.fn(_.i), 
+      required("f", float).contramap.fn(_.f), 
+      required("b", bool).contramap.fn(_.b), 
+      required("a", arrs).contramap.fn(_.a),
+      optional("o", simpleSchema).contramap.fn(_.o)
     )
   );
 

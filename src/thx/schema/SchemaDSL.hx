@@ -48,15 +48,15 @@ class SchemaDSL {
   // Constructors for object properties. 
   //
 
-  public static function required<O, A>(fieldName: String, valueSchema: Schema<A>, accessor: O -> A): ObjectBuilder<O, A>
-    return lift(Required(fieldName, valueSchema, accessor));
+  public static function required<A>(fieldName: String, valueSchema: Schema<A>): ObjectBuilder<A, A>
+    return lift(Required(fieldName, valueSchema, identity));
 
-  public static function optional<O, A>(fieldName: String, valueSchema: Schema<A>, accessor: O -> Option<A>): ObjectBuilder<O, Option<A>>
-    return lift(Optional(fieldName, valueSchema, accessor));
+  public static function optional<A>(fieldName: String, valueSchema: Schema<A>): ObjectBuilder<Option<A>, Option<A>>
+    return lift(Optional(fieldName, valueSchema, identity));
 
   // Convenience constructor for a single-property object schema that simply wraps another schema.
   public static function wrap<A>(fieldName: String, valueSchema: Schema<A>): Schema<A>
-    return object(required(fieldName, valueSchema, identity));
+    return object(required(fieldName, valueSchema));
 
   //
   // Combinators for building complex schemas
