@@ -47,11 +47,11 @@ class TestSchema {
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
 
-  static var simpleSchema = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
+  public static var simpleSchema: Schema<TSimple> = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
 
-  static var arrs = array(simpleSchema);
+  public static var arrs: Schema<Array<TSimple>> = array(simpleSchema);
 
-  static var complexSchema = object(
+  public static var complexSchema: Schema<TComplex> = object(
     ap5(
       TComplex.new,
       required("i", int, function(tc: TComplex) return tc.i), 
@@ -62,7 +62,7 @@ class TestSchema {
     )
   );
 
-  static var enumSchema = oneOf([
+  public static var enumSchema: Schema<TEnum> = oneOf([
     alt("ex", simpleSchema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
     alt("ey", string,       function(s) return EY(s), function(e: TEnum) return switch e { case EY(s): Some(s); case _: None; }),
     alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
@@ -123,7 +123,6 @@ class TestSchema {
 
     Assert.same(Right(EX(new TSimple(3))), enumSchema.parse(x));
     Assert.same(Right(EY("hi")), enumSchema.parse(y));
-    trace(enumSchema.parse(z));
     Assert.same(Right(EZ), enumSchema.parse(z));
   }
 }

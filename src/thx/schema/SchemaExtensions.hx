@@ -20,6 +20,19 @@ class SchemaExtensions {
     return switch a {
       case Prism(id, _, _, _): id;
     };
+
+  public static function stype<A>(schema: Schema<A>): SType 
+    return switch schema {
+      case BoolSchema:  BoolSType;
+      case FloatSchema: FloatSType;
+      case IntSchema:   IntSType;
+      case StrSchema:   StrSType;
+      case UnitSchema:  UnitSType;
+      case ObjectSchema(propSchema): ObjectSType;
+      case ArraySchema(elemSchema):  ArraySType;
+      case OneOfSchema(alternatives): OneOfSType;
+      case IsoSchema(base, f, g): stype(base);
+    };
 }
 
 class ObjectSchemaExtensions {

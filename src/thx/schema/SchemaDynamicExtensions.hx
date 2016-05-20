@@ -3,6 +3,7 @@ package thx.schema;
 import haxe.ds.Option;
 import thx.schema.SPath;
 
+import thx.Maps;
 import thx.Objects;
 import thx.Nel;
 import thx.Validation;
@@ -12,10 +13,12 @@ import thx.Unit;
 import thx.fp.Dynamics;
 import thx.fp.Dynamics.*;
 import thx.fp.Functions.*;
+import thx.fp.Writer;
 
 using thx.Arrays;
 using thx.Eithers;
 using thx.Functions;
+using thx.Iterators;
 using thx.Maps;
 using thx.Options;
 using thx.Validation.ValidationExtensions;
@@ -109,6 +112,86 @@ class SchemaDynamicExtensions {
 
   inline static public function fail<A>(message: String, path: SPath): VNel<ParseError, A>
     return failureNel(new ParseError(message, path));
+
+  public static function renderDynamic<A>(schema: Schema<A>, value: A): Dynamic {
+    return switch schema {
+      case IntSchema:   value;
+      case FloatSchema: value;
+      case StrSchema:   value;
+      case BoolSchema:  value;
+      case UnitSchema:  value;
+
+      case ObjectSchema(propSchema):
+        renderDynObject(propSchema, value);
+
+      case ArraySchema(elemSchema):  
+        value.map(renderDynamic.bind(elemSchema, _));
+
+      case OneOfSchema(alternatives):
+        var selected: Array<Map<String, Dynamic>> = alternatives.flatMap(
+          function(alt) return switch alt {
+            case Prism(id, base, f, g): 
+              g(value).map(function(b) return [ id => renderDynamic(base, b) ]).toArray();
+          }
+        );
+
+        switch selected {
+          case []: 
+            throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.stype()}');
+
+          case other: 
+            other.head().toObject();
+            //'Ambiguous value $value: multiple alternatives for ${schema.metadata().title} (all of ${other.map(Render.renderUnsafe)}) claim to be valid renderings.';
+        }
+
+      case IsoSchema(base, _, g): renderDynamic(base, g(value));
+    }
+  }
+
+  public static function renderDynObject<A>(builder: ObjectBuilder<A, A>, value: A): Dynamic {
+    var m: Map<String, Dynamic> = evalRO(builder, value).runLog();
+    return m.toObject();
+  }
+
+  // This value will be reused a bunch, so no need to re-create it all the time.
+  private static var wm(default, never): Monoid<Map<String, Dynamic>> = {
+    zero: (new Map(): Map<String, Dynamic>),
+    append: function(m0: Map<String, Dynamic>, m1: Map<String, Dynamic>) {
+      return m1.keys().reduce(
+        function(acc: Map<String, Dynamic>, k: String) {
+          acc[k] = m1[k];
+          return acc;
+        },
+        m0
+      );
+    }
+  };
+
+  // should be inside renderObject, but haxe doesn't let you write corecursive
+  // functions as inner functions
+  private static function evalRO<O, X>(builder: ObjectBuilder<O, X>, value: O): Writer<Map<String, Dynamic>, X>
+    return switch builder {
+      case Pure(a): Writer.pure(a, wm);
+      case Ap(s, k): goRO(s, k, value);
+    };
+
+  // should be inside renderObject, but haxe doesn't let you write corecursive
+  // functions as inner functions
+  private static function goRO<O, I, J>(schema: PropSchema<O, I>, k: ObjectBuilder<O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
+    var action: Writer<Map<String, Dynamic>, I> = switch schema {
+      case Required(field, valueSchema, accessor):
+        var i0 = accessor(value);
+        Writer.tell([ field => renderDynamic(valueSchema, i0) ], wm) >>
+        Writer.pure(i0, wm);
+
+      case Optional(field, valueSchema, accessor):
+        var i0 = accessor(value);
+        Writer.tell(i0.cata(new Map(), function(v0) return [ field => renderDynamic(valueSchema, v0) ]), wm) >>
+        Writer.pure(i0, wm);
+    }
+
+    return action.ap(evalRO(k, value));
+  }
 }
 
 class ParseError {

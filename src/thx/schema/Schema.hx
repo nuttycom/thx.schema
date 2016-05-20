@@ -39,3 +39,14 @@ enum ObjectBuilder<O, A> {
   Pure(a: A);
   Ap<I>(s: PropSchema<O, I>, k: ObjectBuilder<O, I -> A>);
 }
+
+enum SType {
+  BoolSType;
+  FloatSType;
+  IntSType;
+  StrSType;
+  UnitSType;
+  ObjectSType;
+  ArraySType;
+  OneOfSType;
+}
