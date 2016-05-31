@@ -34,6 +34,9 @@ class SchemaDSL {
   public static function iso<A, B>(base: Schema<A>, f: A -> B, g: B -> A): Schema<B>
     return IsoSchema(base, f, g);
 
+  public static function lazy<A>(base: Void -> Schema<A>): Schema<A>
+    return LazySchema(base);
+
   public static function constant<A>(a: A): Schema<A>
     return iso(UnitSchema, const(a), const(unit));
 

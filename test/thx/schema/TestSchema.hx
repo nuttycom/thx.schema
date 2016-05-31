@@ -11,6 +11,7 @@ import thx.schema.SchemaDSL.*;
 using thx.schema.SchemaExtensions;
 using thx.schema.SchemaDynamicExtensions;
 using thx.Eithers;
+using thx.Functions;
 
 class TSimple {
   public var x: Int;
@@ -18,6 +19,8 @@ class TSimple {
   public function new(x: Int) {
     this.x = x;
   }
+
+  public static var schema(default, never): Schema<TSimple> = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
 }
 
 class TComplex {
@@ -34,6 +37,35 @@ class TComplex {
     this.a = a;
     this.o = o;
   }
+
+  public static var schema(default, never): Schema<TComplex> = object(
+    ap5(
+      TComplex.new,
+      required("i", int, function(tc: TComplex) return tc.i), 
+      required("f", float, function(tc: TComplex) return tc.f), 
+      required("b", bool, function(tc: TComplex) return tc.b), 
+      required("a", array(TSimple.schema), function(tc: TComplex) return tc.a), 
+      optional("o", TSimple.schema, function(tc: TComplex) return tc.o)
+    )
+  );
+}
+
+class TRec {
+  public var i: Int;
+  public var rec: Array<TRec>;
+
+  public function new(i: Int, rec: Array<TRec>) {
+    this.i = i;
+    this.rec = rec;
+  }
+
+  public static var schema(default, never): Schema<TRec> = object(
+    ap2(
+      TRec.new,
+      required("i", int, function(tc: TRec) return tc.i), 
+      required("rec", array(lazy(function() return TRec.schema)), function(tc: TRec) return tc.rec)
+    )
+  );
 }
 
 enum TEnum {
@@ -42,32 +74,18 @@ enum TEnum {
   EZ;
 }
 
+class TEnums {
+  public static var schema: Schema<TEnum> = oneOf([
+    alt("ex", TSimple.schema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
+    alt("ey", string,       function(s) return EY(s), function(e: TEnum) return switch e { case EY(s): Some(s); case _: None; }),
+    alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
+  ]);
+}
+
 class TestSchema {
   static var ox3 = { x : 3 };
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
-
-  public static var simpleSchema: Schema<TSimple> = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
-
-  public static var arrs: Schema<Array<TSimple>> = array(simpleSchema);
-
-  public static var complexSchema: Schema<TComplex> = object(
-    ap5(
-      TComplex.new,
-      required("i", int, function(tc: TComplex) return tc.i), 
-      required("f", float, function(tc: TComplex) return tc.f), 
-      required("b", bool, function(tc: TComplex) return tc.b), 
-      required("a", arrs, function(tc: TComplex) return tc.a), 
-      optional("o", simpleSchema, function(tc: TComplex) return tc.o)
-    )
-  );
-
-  public static var enumSchema: Schema<TEnum> = oneOf([
-    alt("ex", simpleSchema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
-    alt("ey", string,       function(s) return EY(s), function(e: TEnum) return switch e { case EY(s): Some(s); case _: None; }),
-    alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
-  ]);
-
 
   public function new() { }
 
@@ -76,7 +94,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))), 
-      complexSchema.parse(obj)
+      TComplex.schema.parse(obj)
     );
   }
 
@@ -85,7 +103,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)), 
-      complexSchema.parse(obj)
+      TComplex.schema.parse(obj)
     );
   }
 
@@ -121,9 +139,18 @@ class TestSchema {
     var y = { ey: "hi" };
     var z = { ez: null };
 
-    Assert.same(Right(EX(new TSimple(3))), enumSchema.parse(x));
-    Assert.same(Right(EY("hi")), enumSchema.parse(y));
-    Assert.same(Right(EZ), enumSchema.parse(z));
+    Assert.same(Right(EX(new TSimple(3))), TEnums.schema.parse(x));
+    Assert.same(Right(EY("hi")), TEnums.schema.parse(y));
+    Assert.same(Right(EZ), TEnums.schema.parse(z));
+  }
+
+  public function testParseRec() {
+    var obj = { i: 1, rec: [{ i: 2, rec: [{ i: 3, rec: [] }] }] };
+
+    Assert.same(
+      Right(new TRec(1, [new TRec(2, [new TRec(3, [])])])),
+      TRec.schema.parse(obj)
+    );
   }
 }
 

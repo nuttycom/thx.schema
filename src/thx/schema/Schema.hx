@@ -23,6 +23,9 @@ enum Schema<A> {
 
   // This allows us to create schemas that parse to newtype wrappers
   IsoSchema<B, C>(base: Schema<B>, f: B -> C, g: C -> B): Schema<C>;
+
+  // Lazy wrapper for schema values to permit recursive schema definitions.
+  LazySchema<B>(delay: Void -> Schema<B>): Schema<B>;
 }
 
 enum Alternative<A> {

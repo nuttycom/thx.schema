@@ -70,6 +70,9 @@ class SchemaDynamicExtensions {
 
       case IsoSchema(base, f, _): 
         parse0(base, v, path).map(f);
+
+      case LazySchema(base): 
+        parse0(base(), v, path);
     };
   }
 
@@ -144,7 +147,11 @@ class SchemaDynamicExtensions {
             //'Ambiguous value $value: multiple alternatives for ${schema.metadata().title} (all of ${other.map(Render.renderUnsafe)}) claim to be valid renderings.';
         }
 
-      case IsoSchema(base, _, g): renderDynamic(base, g(value));
+      case IsoSchema(base, _, g): 
+        renderDynamic(base, g(value));
+
+      case LazySchema(base): 
+        renderDynamic(base(), value);
     }
   }
 

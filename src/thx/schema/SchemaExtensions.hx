@@ -32,6 +32,7 @@ class SchemaExtensions {
       case ArraySchema(elemSchema):  ArraySType;
       case OneOfSchema(alternatives): OneOfSType;
       case IsoSchema(base, f, g): stype(base);
+      case LazySchema(base): stype(base());
     };
 }
 
