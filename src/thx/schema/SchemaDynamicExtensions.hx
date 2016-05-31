@@ -32,6 +32,10 @@ class SchemaDynamicExtensions {
     return parse0(schema, v, SPath.root);
   }
 
+  public static function parser<A>(schema: Schema<A>): Dynamic -> VNel<ParseError, A> {
+    return parse.bind(schema, _);
+  }
+
   private static function parse0<A>(schema: Schema<A>, v: Dynamic, path: SPath): VNel<ParseError, A> {
     return switch schema {
       case IntSchema:   parseInt(v).leftMapNel(errAt(path));
