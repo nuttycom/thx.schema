@@ -6,10 +6,11 @@ import thx.schema.SPath;
 import thx.Maps;
 import thx.Objects;
 import thx.Nel;
-import thx.Validation;
-import thx.Validation.*;
+import thx.Strings;
 import thx.Types;
 import thx.Unit;
+import thx.Validation;
+import thx.Validation.*;
 import thx.fp.Dynamics;
 import thx.fp.Dynamics.*;
 import thx.fp.Functions.*;
@@ -45,7 +46,8 @@ class SchemaDynamicExtensions {
       case UnitSchema:  successNel(unit);
 
       case ObjectSchema(propSchema): parseObject(propSchema, v, path);
-      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(v, i) return parse0(elemSchema, v, path * i), errAt(path));
+      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parse0(elemSchema, x, path * i), errAt(path));
+      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(elemSchema, x, path / s), errAt(path));
 
       case OneOfSchema(alternatives):
         // The alternative is encoded as an object containing single field, where the
@@ -133,6 +135,9 @@ class SchemaDynamicExtensions {
 
       case ArraySchema(elemSchema):  
         value.map(renderDynamic.bind(elemSchema, _));
+
+      case MapSchema(elemSchema):
+        value.mapValues(renderDynamic.bind(elemSchema, _), new Map());
 
       case OneOfSchema(alternatives):
         var selected: Array<Map<String, Dynamic>> = alternatives.flatMap(

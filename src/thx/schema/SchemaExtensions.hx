@@ -30,6 +30,7 @@ class SchemaExtensions {
       case UnitSchema:  UnitSType;
       case ObjectSchema(propSchema): ObjectSType;
       case ArraySchema(elemSchema):  ArraySType;
+      case MapSchema(elemSchema):    MapSType;
       case OneOfSchema(alternatives): OneOfSType;
       case IsoSchema(base, f, g): stype(base);
       case LazySchema(base): stype(base());
