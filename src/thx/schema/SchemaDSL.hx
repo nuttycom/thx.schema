@@ -1,7 +1,6 @@
 package thx.schema;
 
 import haxe.ds.Option;
-import haxe.ds.StringMap;
 
 import thx.Functions;
 import thx.Unit;
@@ -27,7 +26,7 @@ class SchemaDSL {
   public static function array<A>(elemSchema: Schema<A>): Schema<Array<A>>
     return ArraySchema(elemSchema);
 
-  public static function map<A>(elemSchema: Schema<A>): Schema<StringMap<A>>
+  public static function map<A>(elemSchema: Schema<A>): Schema<Map<String, A>>
     return MapSchema(elemSchema);
 
   public static function object<A>(propSchema: ObjectBuilder<A, A>): Schema<A>
