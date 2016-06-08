@@ -31,7 +31,7 @@ enum Schema<A> {
 }
 
 enum Alternative<A> {
-  Prism<B>(id: String, base: Schema<B>, f: B -> A, g: A -> Option<B>);
+  Prism<A, B>(id: String, base: Schema<B>, f: B -> A, g: A -> Option<B>): Alternative<A>;
 }
 
 enum PropSchema<O, A> {
@@ -44,6 +44,8 @@ enum ObjectBuilder<O, A> {
   Pure(a: A);
   Ap<I>(s: PropSchema<O, I>, k: ObjectBuilder<O, I -> A>);
 }
+
+typedef HomObjectBuilder<A> = ObjectBuilder<A, A>;
 
 enum SType {
   BoolSType;

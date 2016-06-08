@@ -35,6 +35,14 @@ class SchemaExtensions {
       case IsoSchema(base, f, g): stype(base);
       case LazySchema(base): stype(base());
     };
+
+  public static function isConstant<A>(schema: Schema<A>): Bool
+    return switch schema {
+      case UnitSchema: true;
+      case IsoSchema(s0, _, _): isConstant(s0);
+      case LazySchema(fs): isConstant(fs());
+      case _: false;
+    };
 }
 
 class ObjectSchemaExtensions {
@@ -68,3 +76,10 @@ class PropSchemaExtensions {
     };
 }
 
+class AlternativeExtensions {
+  public static function isConstantAlt<A>(alt: Alternative<A>): Bool {
+    return switch alt {
+      case Prism(_, s, _, _): SchemaExtensions.isConstant(s);
+    }
+  }
+}

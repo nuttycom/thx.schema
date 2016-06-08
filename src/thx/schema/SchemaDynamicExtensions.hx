@@ -59,7 +59,7 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, g)]:
-              var parser = if (isConstant(base)) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
+              var parser = if (base.isConstant()) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
               parser(v, id, parse0.bind(base, _, path / id)).map(f);
 
             case other:
@@ -106,14 +106,6 @@ class SchemaDynamicExtensions {
     } else {
       fail('$v is not an anonymous object structure}).', path);
     };
-  }
-
-  public static function isConstant<A>(schema: Schema<A>): Bool {
-    return switch schema {
-      case UnitSchema: true;
-      case IsoSchema(base, _, _): isConstant(base);
-      case _: false;
-    }
   }
 
   inline static public function errAt<A>(path: SPath): String -> ParseError
