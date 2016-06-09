@@ -6,6 +6,7 @@ import thx.Functions;
 import thx.Unit;
 import thx.Functions.identity;
 import thx.fp.Functions.const;
+using thx.Bools;
 
 import thx.schema.Schema;
 using thx.schema.SchemaExtensions;
@@ -50,6 +51,9 @@ class SchemaDSL {
 
   public static function alt<A, B>(id: String, base: Schema<B>, f: B -> A, g: A -> Option<B>): Alternative<A>
     return Prism(id, base, f, g);
+
+  public static function constAlt<B>(id: String, b: B, equal: B -> B -> Bool): Alternative<B>
+    return Prism(id, constant(b), identity, function(b0) return equal(b, b0).option(b));
 
   //
   // Constructors for object properties. 

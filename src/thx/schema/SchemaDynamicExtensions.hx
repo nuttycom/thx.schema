@@ -71,7 +71,7 @@ class SchemaDynamicExtensions {
           var alts = fields.flatMap(function(name) return alternatives.filter.fn(_.id() == name));
 
           switch alts {
-            case [Prism(id, base, f, g)]:
+            case [Prism(id, base, f, _)]:
               var parser = if (base.isConstant()) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
               parser(v, id, parse0.bind(base, _, path / id)).map(f);
 
