@@ -77,9 +77,15 @@ class PropSchemaExtensions {
 }
 
 class AlternativeExtensions {
+  public static function id<A>(alt: Alternative<A>): String {
+    return switch alt {
+      case Prism(id, _, _, _): id;
+    };
+  }
+
   public static function isConstantAlt<A>(alt: Alternative<A>): Bool {
     return switch alt {
       case Prism(_, s, _, _): SchemaExtensions.isConstant(s);
-    }
+    };
   }
 }

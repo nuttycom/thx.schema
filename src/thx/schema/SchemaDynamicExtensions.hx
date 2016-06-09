@@ -50,10 +50,23 @@ class SchemaDynamicExtensions {
       case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(elemSchema, x, path / s), errAt(path));
 
       case OneOfSchema(alternatives):
-        // The alternative is encoded as an object containing single field, where the
-        // name of the field is the constructor and the body is parsed by the schema
-        // for that alternative.
-        if (Types.isAnonymousObject(v)) {
+        if (alternatives.all.fn(_.isConstantAlt())) {
+          // all of the alternatives are constant-valued, so there is no need to encode
+          // on any data and we can use the identifier as a bare encoding rather
+          // than an object key.
+          parseString(v).leftMapNel(errAt(path)).flatMapV(
+            function(s: String) {
+              var id0 = s.toLowerCase();
+              return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
+                case Some(Prism(id, altSchema, f, _)): parse0(altSchema, v, path / id).map(f);
+                case None: fail('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]', path);
+              }
+            }
+          );
+        } else if (Types.isAnonymousObject(v)) {
+          // The alternative is encoded as an object containing single field, where the
+          // name of the field is the constructor and the body is parsed by the schema
+          // for that alternative.
           var fields = Objects.fields(v);
           var alts = fields.flatMap(function(name) return alternatives.filter.fn(_.id() == name));
 
@@ -134,18 +147,20 @@ class SchemaDynamicExtensions {
       case OneOfSchema(alternatives):
         var selected: Array<Map<String, Dynamic>> = alternatives.flatMap(
           function(alt) return switch alt {
-            case Prism(id, base, f, g): 
-              g(value).map(function(b) return [ id => renderDynamic(base, b) ]).toArray();
+            case Prism(id, base, _, g): g(value).map(function(b) return [ id => renderDynamic(base, b) ]).toArray();
           }
         );
 
         switch selected {
-          case []: 
-            throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.stype()}');
+          case [m]: 
+            if (alternatives.all.fn(_.isConstantAlt())) {
+              m.keys().first(); // just return the key, the value will be unit
+            } else {
+              m.toObject();
+            }
 
-          case other: 
-            other.head().toObject();
-            //'Ambiguous value $value: multiple alternatives for ${schema.metadata().title} (all of ${other.map(Render.renderUnsafe)}) claim to be valid renderings.';
+          case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.stype()}');
+          case _:  throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${alternatives.map.fn(_.id())}) claim to render to ${schema.stype}.');
         }
 
       case IsoSchema(base, _, g): 
