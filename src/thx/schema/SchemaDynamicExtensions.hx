@@ -160,7 +160,7 @@ class SchemaDynamicExtensions {
             }
 
           case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.stype()}');
-          case _:  throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${alternatives.map.fn(_.id())}) claim to render to ${schema.stype}.');
+          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schema.stype}.');
         }
 
       case IsoSchema(base, _, g): 
