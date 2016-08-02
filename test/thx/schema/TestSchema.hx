@@ -70,14 +70,27 @@ class TRec {
 
 enum TEnum {
   EX(o: TSimple);
-  EY(s: String);
+  EY(s: String, i: Int);
   EZ;
 }
+
+@sequence(s, i)
+typedef EYO = {s: String, i: Int}
 
 class TEnums {
   public static var schema: Schema<TEnum> = oneOf([
     alt("ex", TSimple.schema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
-    alt("ey", string,       function(s) return EY(s), function(e: TEnum) return switch e { case EY(s): Some(s); case _: None; }),
+    alt("ey", 
+      object(
+        ap2(
+          function(s: String, i: Int) return { s: s, i: i },
+          required("s", string, function(o: EYO) return o.s),
+          required("i", int, function(o: EYO) return o.i)
+        )
+      ),
+      function(o: EYO) return EY(o.s, o.i), 
+      function(e: TEnum) return switch e { case EY(s, i): Some({s: s, i: i}); case _: None; }
+    ),
     alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
   ]);
 }
@@ -136,11 +149,11 @@ class TestSchema {
 
   public function testParseEnum() {
     var x = { ex: { x: 3 } };
-    var y = { ey: "hi" };
+    var y = { ey: { s: "hi", i: 1 } };
     var z = { ez: null };
 
     Assert.same(Right(EX(new TSimple(3))), TEnums.schema.parse(x));
-    Assert.same(Right(EY("hi")), TEnums.schema.parse(y));
+    Assert.same(Right(EY("hi", 1)), TEnums.schema.parse(y));
     Assert.same(Right(EZ), TEnums.schema.parse(z));
   }
 
