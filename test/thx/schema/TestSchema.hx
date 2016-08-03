@@ -62,7 +62,7 @@ class TRec {
   public static var schema(default, never): Schema<TRec> = object(
     ap2(
       TRec.new,
-      required("i", int, function(tc: TRec) return tc.i), 
+      required("i", int, function(tc: TRec) return tc.i),
       required("rec", array(lazy(function() return TRec.schema)), function(tc: TRec) return tc.rec)
     )
   );
@@ -158,10 +158,10 @@ class TestSchema {
       makeAlt("a", A),
       makeAlt("b", B, { i: int }),
       makeAlt("c", C, { b: bool, f: float }),
-      makeAlt("d", D, { s: string, b: bool, f: float })
+      makeAlt("d", D, { s: string, b: bool, f: makeOptional(float) })
     ]);
     Assert.isTrue(schema.parse("b").either.isLeft());
-    var tests = [A, B(1), C(false, 0.1), D("x", true, 3.1415)];
+    var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
       Assert.same(
@@ -177,5 +177,5 @@ enum TEnumMulti {
   A;
   B(i: Int);
   C(b: Bool, f: Float);
-  D(s: String, b: Bool, f: Float);
+  D(s: String, b: Bool, f: Option<Float>);
 }

@@ -61,6 +61,12 @@ class SchemaDSL {
   macro public static function makeAlt(id: haxe.macro.Expr.ExprOf<String>, rest: Array<haxe.macro.Expr>)
     return SchemaDSLM.makeVar(id, rest);
 
+  public static function makeOptional<A>(s: Schema<A>): Schema<Option<A>>
+    return oneOf([
+      alt("some", s, function(a: A) return Some(a), thx.Functions.identity),
+      constAlt("none", None, function(a: Option<A>, b: Option<A>) return a == b)
+    ]);
+
   //
   // Constructors for object properties.
   //

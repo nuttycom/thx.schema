@@ -21,7 +21,7 @@ class SchemaExtensions {
       case Prism(id, _, _, _): id;
     };
 
-  public static function stype<A>(schema: Schema<A>): SType 
+  public static function stype<A>(schema: Schema<A>): SType
     return switch schema {
       case BoolSchema:  BoolSType;
       case FloatSchema: FloatSType;
