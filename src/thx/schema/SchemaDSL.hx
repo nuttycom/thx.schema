@@ -55,8 +55,15 @@ class SchemaDSL {
   public static function constAlt<B>(id: String, b: B, equal: B -> B -> Bool): Alternative<B>
     return Prism(id, constant(b), identity, function(b0) return equal(b, b0).option(b));
 
+  public static function constEnum<B : EnumValue>(id: String, b: B): Alternative<B>
+    return constAlt(id, b, Type.enumEq);
+
+  macro public static function makeAlt(id: haxe.macro.Expr.ExprOf<String>, rest: Array<haxe.macro.Expr>) { //, constr: Expr, obj: ExprOf<Dynamic<Schema<Dynamic>>>) {
+    return SchemaDSLM.makeVar(id, rest);
+  }
+
   //
-  // Constructors for object properties. 
+  // Constructors for object properties.
   //
 
   public static function required<O, A>(fieldName: String, valueSchema: Schema<A>, accessor: O -> A): ObjectBuilder<O, A>
