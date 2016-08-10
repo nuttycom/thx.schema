@@ -174,10 +174,6 @@ class TestSchema {
 
   public function testEnumOneArgument() {
     var schema = oneOf([
-      // alt("b", int, B, function(v) return switch v {
-      //   case B(i): Some(i);
-      //   case _: None;
-      // })
       makeAlt("b", B, int)
     ]);
     Assert.isTrue(schema.parse("b").either.isLeft());
