@@ -171,6 +171,26 @@ class TestSchema {
       );
     }
   }
+
+  public function testEnumOneArgument() {
+    var schema = oneOf([
+      // alt("b", int, B, function(v) return switch v {
+      //   case B(i): Some(i);
+      //   case _: None;
+      // })
+      makeAlt("b", B, int)
+    ]);
+    Assert.isTrue(schema.parse("b").either.isLeft());
+    var tests = [B(1)];
+    for(test in tests) {
+      var v = schema.renderDynamic(test);
+      Assert.same(
+        Right(test),
+        schema.parse(v),
+        'failed with $v'
+      );
+    }
+  }
 }
 
 enum TEnumMulti {

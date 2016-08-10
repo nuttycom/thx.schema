@@ -8,7 +8,6 @@ using thx.Arrays;
 
 class SchemaDSLM {
   public static function makeVar(id: ExprOf<String>, rest: Array<Expr>) { //, constr: Expr, obj: ExprOf<Dynamic<Schema<Dynamic>>>) {
-    // trace(obj);
     if(rest.length == 0)
       Context.error('insufficient arguments', Context.currentPos());
     if(rest.length > 3)
@@ -17,14 +16,23 @@ class SchemaDSLM {
     return if(rest.length == 1) {
       macro thx.schema.SchemaDSL.constEnum($id, $constr);
     } else if(rest.length == 2) {
-        var obj = rest[1];
-        var fields = SchemaDSLM.getFields(obj);
-        make(id, constr, value2Obj(constr, fields), obj);
+        if(isSchema(rest[1])) {
+          make1(id, constr, rest[1]);
+        } else {
+          var obj = rest[1];
+          var fields = SchemaDSLM.getFields(obj);
+          make(id, constr, value2Obj(constr, fields), obj);
+        }
     } else {
         var extr = rest[1];
         var obj = rest[2];
         make(id, constr, extr, obj);
     }
+  }
+
+  public static function make1(id: ExprOf<String>, constr: Expr, sub: Expr) {
+    var f = oneValue2Obj(constr);
+    return macro thx.schema.SchemaDSL.alt($id, $sub, $constr, $f);
   }
 
   public static function make(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<Schema<Dynamic>>>) {
@@ -41,9 +49,14 @@ class SchemaDSLM {
 
     var apf = 'ap${fields.length}';
     var s2v = obj2Value(constr, fields, objectType, valueType);
-    var m = macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.object($i{apf}($a{args})), $s2v, $extr);
-    // trace(haxe.macro.ExprTools.toString(m));
-    return m;
+    return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.object($i{apf}($a{args})), $s2v, $extr);
+  }
+
+  static function isSchema(e: Expr) {
+    return switch Context.typeof(e) {
+      case TEnum(_, [type]): true; // TODO make the match stricter
+      case _: false;
+    };
   }
 
   static function getFields(e: Expr) {
@@ -114,6 +127,14 @@ class SchemaDSLM {
         };
     return macro function(v: $valueType): haxe.ds.Option<$objectType> return switch v {
       case $constr($a{args}): Some($obj);
+      case _: None;
+    }
+  }
+
+  static function oneValue2Obj(constr: Expr) {
+    var valueType = getValueType(constr);
+    return macro function(v: $valueType) return switch v {
+      case $constr(v): Some(v);
       case _: None;
     }
   }
