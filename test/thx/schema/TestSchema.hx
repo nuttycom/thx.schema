@@ -31,7 +31,7 @@ class TComplex {
   public var o: Option<TSimple>;
 
   public function new(i: Int, f: Float, b: Bool, a: Array<TSimple>, o: Option<TSimple>) {
-    this.i = i; 
+    this.i = i;
     this.f = f;
     this.b = b;
     this.a = a;
@@ -41,10 +41,10 @@ class TComplex {
   public static var schema(default, never): Schema<TComplex> = object(
     ap5(
       TComplex.new,
-      required("i", int, function(tc: TComplex) return tc.i), 
-      required("f", float, function(tc: TComplex) return tc.f), 
-      required("b", bool, function(tc: TComplex) return tc.b), 
-      required("a", array(TSimple.schema), function(tc: TComplex) return tc.a), 
+      required("i", int, function(tc: TComplex) return tc.i),
+      required("f", float, function(tc: TComplex) return tc.f),
+      required("b", bool, function(tc: TComplex) return tc.b),
+      required("a", array(TSimple.schema), function(tc: TComplex) return tc.a),
       optional("o", TSimple.schema, function(tc: TComplex) return tc.o)
     )
   );
@@ -62,7 +62,7 @@ class TRec {
   public static var schema(default, never): Schema<TRec> = object(
     ap2(
       TRec.new,
-      required("i", int, function(tc: TRec) return tc.i), 
+      required("i", int, function(tc: TRec) return tc.i),
       required("rec", array(lazy(function() return TRec.schema)), function(tc: TRec) return tc.rec)
     )
   );
@@ -93,7 +93,7 @@ class TestSchema {
     var obj = { i: 1, f: 2.0, b: false, a: arr, o: ox3 };
 
     Assert.same(
-      Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))), 
+      Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))),
       TComplex.schema.parse(obj)
     );
   }
@@ -102,7 +102,7 @@ class TestSchema {
     var obj = { i: 1, f: 2.0, b: false, a: arr };
 
     Assert.same(
-      Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)), 
+      Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)),
       TComplex.schema.parse(obj)
     );
   }
@@ -152,5 +152,30 @@ class TestSchema {
       TRec.schema.parse(obj)
     );
   }
+
+  public function testEnum() {
+    var schema = oneOf([
+      makeAlt("a", A),
+      makeAlt("b", B, { i: int }),
+      makeAlt("c", C, { b: bool, f: float }),
+      makeAlt("d", D, { s: string, b: bool, f: makeOptional(float) })
+    ]);
+    Assert.isTrue(schema.parse("b").either.isLeft());
+    var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
+    for(test in tests) {
+      var v = schema.renderDynamic(test);
+      Assert.same(
+        Right(test),
+        schema.parse(v),
+        'failed with $v'
+      );
+    }
+  }
 }
 
+enum TEnumMulti {
+  A;
+  B(i: Int);
+  C(b: Bool, f: Float);
+  D(s: String, b: Bool, f: Option<Float>);
+}

@@ -55,8 +55,20 @@ class SchemaDSL {
   public static function constAlt<B>(id: String, b: B, equal: B -> B -> Bool): Alternative<B>
     return Prism(id, constant(b), identity, function(b0) return equal(b, b0).option(b));
 
+  public static function constEnum<B : EnumValue>(id: String, b: B): Alternative<B>
+    return constAlt(id, b, Type.enumEq);
+
+  macro public static function makeAlt(id: haxe.macro.Expr.ExprOf<String>, rest: Array<haxe.macro.Expr>)
+    return SchemaDSLM.makeVar(id, rest);
+
+  public static function makeOptional<A>(s: Schema<A>): Schema<Option<A>>
+    return oneOf([
+      alt("some", s, function(a: A) return Some(a), thx.Functions.identity),
+      constAlt("none", None, function(a: Option<A>, b: Option<A>) return a == b)
+    ]);
+
   //
-  // Constructors for object properties. 
+  // Constructors for object properties.
   //
 
   public static function required<O, A>(fieldName: String, valueSchema: Schema<A>, accessor: O -> A): ObjectBuilder<O, A>
