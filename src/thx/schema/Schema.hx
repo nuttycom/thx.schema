@@ -16,7 +16,7 @@ enum Schema<A> {
   StrSchema: Schema<String>;
   UnitSchema: Schema<Unit>;
 
-  ObjectSchema<B>(propSchema: ObjectBuilder<B, B>): Schema<B>;
+  ObjectSchema<B, X>(propSchema: ObjectBuilder<B, X>): Schema<B>;
   ArraySchema<B>(elemSchema: Schema<B>): Schema<Array<B>>;
   MapSchema<B>(elemSchema: Schema<B>): Schema<Map<String, B>>; // interpret as a String-keyed map instead of an object value
 
