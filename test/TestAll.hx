@@ -9,6 +9,7 @@ class TestAll {
     var runner = new Runner();
     runner.addCase(new TestSchema());
     runner.addCase(new TestSchemaDynamicExtensions());
+    runner.addCase(new TestSchemaGenExtensions());
     Report.create(runner);
     runner.run();
   }

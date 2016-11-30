@@ -3,8 +3,7 @@
     {
       "name": "thx.core",
       "type": "git",
-      "dir": "",
-      "ref": "master",
+      "ref": "8e018dea",
       "url": "git@github.com:fponticelli/thx.core"
     },
     {
