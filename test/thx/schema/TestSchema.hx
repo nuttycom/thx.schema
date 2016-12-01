@@ -20,7 +20,7 @@ class TSimple {
     this.x = x;
   }
 
-  public static var schema(default, never): Schema<TSimple> = object(required("x", int, function(ts: TSimple) return ts.x).map(TSimple.new));
+  public static function schema<E>(): Schema<TSimple, E> return object(required("x", int(), function(ts: TSimple) return ts.x).map(TSimple.new));
 }
 
 class TComplex {
@@ -38,14 +38,14 @@ class TComplex {
     this.o = o;
   }
 
-  public static var schema(default, never): Schema<TComplex> = object(
+  public static function schema<E>(): Schema<TComplex, E> return object(
     ap5(
       TComplex.new,
-      required("i", int, function(tc: TComplex) return tc.i),
-      required("f", float, function(tc: TComplex) return tc.f),
-      required("b", bool, function(tc: TComplex) return tc.b),
-      required("a", array(TSimple.schema), function(tc: TComplex) return tc.a),
-      optional("o", TSimple.schema, function(tc: TComplex) return tc.o)
+      required("i", int(), function(tc: TComplex) return tc.i),
+      required("f", float(), function(tc: TComplex) return tc.f),
+      required("b", bool(), function(tc: TComplex) return tc.b),
+      required("a", array(TSimple.schema()), function(tc: TComplex) return tc.a),
+      optional("o", TSimple.schema(), function(tc: TComplex) return tc.o)
     )
   );
 }
@@ -59,11 +59,11 @@ class TRec {
     this.rec = rec;
   }
 
-  public static var schema(default, never): Schema<TRec> = object(
+  public static function schema<E>(): Schema<TRec, E> return object(
     ap2(
       TRec.new,
-      required("i", int, function(tc: TRec) return tc.i),
-      required("rec", array(lazy(function() return TRec.schema)), function(tc: TRec) return tc.rec)
+      required("i", int(), function(tc: TRec) return tc.i),
+      required("rec", array(lazy(function() return TRec.schema())), function(tc: TRec) return tc.rec)
     )
   );
 }
@@ -78,14 +78,14 @@ enum TEnum {
 typedef EYO = {s: String, i: Int}
 
 class TEnums {
-  public static var schema: Schema<TEnum> = oneOf([
-    alt("ex", TSimple.schema, function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
+  public static function schema<E>(): Schema<TEnum, E> return oneOf([
+    alt("ex", TSimple.schema(), function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
     alt("ey", 
       object(
         ap2(
           function(s: String, i: Int) return { s: s, i: i },
-          required("s", string, function(o: EYO) return o.s),
-          required("i", int, function(o: EYO) return o.i)
+          required("s", string(), function(o: EYO) return o.s),
+          required("i", int(), function(o: EYO) return o.i)
         )
       ),
       function(o: EYO) return EY(o.s, o.i), 
@@ -100,6 +100,8 @@ class TestSchema {
   static var ox4 = { x : 4 };
   static var arr = [ox3, ox4];
 
+  public function serr(s: String) return s;
+
   public function new() { }
 
   public function testParseSuccess() {
@@ -107,7 +109,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))),
-      TComplex.schema.parse(obj)
+      TComplex.schema().parse(serr, obj)
     );
   }
 
@@ -116,35 +118,35 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)),
-      TComplex.schema.parse(obj)
+      TComplex.schema().parse(serr, obj)
     );
   }
 
   public function testParseInt() {
-    Assert.same(Right(1), int.parse(1));
-    Assert.same(Right(1), int.parse("1"));
-    Assert.isTrue(int.parse(2.1).either.isLeft());
-    Assert.isTrue(int.parse("xadf").either.isLeft());
+    Assert.same(Right(1), int().parse(serr, 1));
+    Assert.same(Right(1), int().parse(serr, "1"));
+    Assert.isTrue(int().parse(serr, 2.1).either.isLeft());
+    Assert.isTrue(int().parse(serr, "xadf").either.isLeft());
   }
 
   public function testParseFloat() {
-    Assert.same(Right(1), float.parse(1));
-    Assert.same(Right(1.5), float.parse(1.5));
-    Assert.same(Right(1.5), float.parse("1.5"));
-    Assert.isTrue(float.parse("xadf").either.isLeft());
+    Assert.same(Right(1), float().parse(serr, 1));
+    Assert.same(Right(1.5), float().parse(serr, 1.5));
+    Assert.same(Right(1.5), float().parse(serr, "1.5"));
+    Assert.isTrue(float().parse(serr, "xadf").either.isLeft());
   }
 
   public function testParseBool() {
-    Assert.same(Right(true), bool.parse(true));
-    Assert.same(Right(true), bool.parse("true"));
-    Assert.isTrue(bool.parse("xadf").either.isLeft());
+    Assert.same(Right(true), bool().parse(serr, true));
+    Assert.same(Right(true), bool().parse(serr, "true"));
+    Assert.isTrue(bool().parse(serr, "xadf").either.isLeft());
   }
 
   public function testParseString() {
-    Assert.same(Right("asdf"), string.parse("asdf"));
-    Assert.isTrue(string.parse(1).either.isLeft());
-    Assert.isTrue(string.parse(1.0).either.isLeft());
-    Assert.isTrue(string.parse(true).either.isLeft());
+    Assert.same(Right("asdf"), string().parse(serr, "asdf"));
+    Assert.isTrue(string().parse(serr, 1).either.isLeft());
+    Assert.isTrue(string().parse(serr, 1.0).either.isLeft());
+    Assert.isTrue(string().parse(serr, true).either.isLeft());
   }
 
   public function testParseEnum() {
@@ -152,9 +154,9 @@ class TestSchema {
     var y = { ey: { s: "hi", i: 1 } };
     var z = { ez: null };
 
-    Assert.same(Right(EX(new TSimple(3))), TEnums.schema.parse(x));
-    Assert.same(Right(EY("hi", 1)), TEnums.schema.parse(y));
-    Assert.same(Right(EZ), TEnums.schema.parse(z));
+    Assert.same(Right(EX(new TSimple(3))), TEnums.schema().parse(serr, x));
+    Assert.same(Right(EY("hi", 1)), TEnums.schema().parse(serr, y));
+    Assert.same(Right(EZ), TEnums.schema().parse(serr, z));
   }
 
   public function testParseRec() {
@@ -162,24 +164,24 @@ class TestSchema {
 
     Assert.same(
       Right(new TRec(1, [new TRec(2, [new TRec(3, [])])])),
-      TRec.schema.parse(obj)
+      TRec.schema().parse(serr, obj)
     );
   }
 
   public function testEnum() {
-    var schema = oneOf([
+    var schema: Schema<TEnumMulti, String> = oneOf([
       makeAlt("a", A),
-      makeAlt("b", B, { i: int }),
-      makeAlt("c", C, { b: bool, f: float }),
-      makeAlt("d", D, { s: string, b: bool, f: makeOptional(float) })
+      makeAlt("b", B, { i: int() }),
+      makeAlt("c", C, { b: bool(), f: float() }),
+      makeAlt("d", D, { s: string(), b: bool(), f: makeOptional(float()) })
     ]);
-    Assert.isTrue(schema.parse("b").either.isLeft());
+    Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
       Assert.same(
         Right(test),
-        schema.parse(v),
+        schema.parse(serr, v),
         'failed with $v'
       );
     }
@@ -187,15 +189,15 @@ class TestSchema {
 
   public function testEnumOneArgument() {
     var schema = oneOf([
-      makeAlt("b", B, int)
+      makeAlt("b", B, int())
     ]);
-    Assert.isTrue(schema.parse("b").either.isLeft());
+    Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [B(1)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
       Assert.same(
         Right(test),
-        schema.parse(v),
+        schema.parse(serr, v),
         'failed with $v'
       );
     }

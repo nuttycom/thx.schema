@@ -2,7 +2,7 @@ package thx.schema;
 
 import thx.Options;
 import thx.Nel;
-import thx.Unit;
+import thx.Nothing;
 import thx.Validation;
 import thx.Validation.*;
 import thx.fp.Dynamics;
@@ -20,28 +20,32 @@ class SchemaGenExtensions {
    * Transform the schema to a generator for example values of the specified type. 
    * TODO: Schema<A> -> Gen<A>
    */
-  public static function exemplar<A>(schema: Schema<A>): A {
+  public static function exemplar<A>(schema: Schema<A, Nothing>): A {
     return switch schema {
       case FloatSchema:  0.0;
       case BoolSchema: false;
       case IntSchema:  0;
       case StrSchema:  "";
-      case UnitSchema: unit;
+      case ConstSchema(a): a;
 
       case OneOfSchema(alternatives): switch alternatives.head() {
         case Prism(_, base, f, _): f(exemplar(base));
       }
 
+      case ParseSchema(base, f, g): switch f(exemplar(base)) {
+        case PSuccess(a): a;
+        case PFailure(_, _): throw "Unreachable - one would have to construct an instance of the uninhabited Nothing type to get here.";
+      }
+
       case ObjectSchema(propSchema):  objectExemplar(propSchema);
       case ArraySchema(elemSchema):   [exemplar(elemSchema)];
       case MapSchema(elemSchema):     ["" => exemplar(elemSchema)];
-      case IsoSchema(base, f, _):     f(exemplar(base));
       case LazySchema(delay):         exemplar(delay());
     }
   } 
 
-  public static function objectExemplar<O, A>(builder: ObjectBuilder<O, A>): A {
-    inline function go<I>(schema: PropSchema<O, I>, k: ObjectBuilder<O, I -> A>): A {
+  public static function objectExemplar<O, A>(builder: ObjectBuilder<O, A, Nothing>): A {
+    inline function go<I>(schema: PropSchema<O, I, Nothing>, k: ObjectBuilder<O, I -> A, Nothing>): A {
       var i: I = switch schema {
         case Required(_, s0, _): exemplar(s0);
         case Optional(_, s0, _): Some(exemplar(s0));

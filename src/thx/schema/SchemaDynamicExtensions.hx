@@ -29,37 +29,40 @@ import thx.schema.SchemaDSL.*;
 using thx.schema.SchemaExtensions;
 
 class SchemaDynamicExtensions {
-  public static function parse<A>(schema: Schema<A>, v: Dynamic): VNel<ParseError, A> {
-    return parse0(schema, v, SPath.root);
+  public static function parse<A, E>(schema: Schema<A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+    return parse0(SPath.root, schema, err, v);
   }
 
-  public static function parser<A>(schema: Schema<A>): Dynamic -> VNel<ParseError, A> {
-    return parse.bind(schema, _);
+  public static function parser<A, E>(schema: Schema<A, E>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
+    return parse0.bind(SPath.root, schema, err, _);
   }
 
-  private static function parse0<A>(schema: Schema<A>, v: Dynamic, path: SPath): VNel<ParseError, A> {
+  private static function parse0<A, E>(path: SPath, schema: Schema<A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+    function failure(s: String) return new ParseError(err(s), path);
+    function failNel(s: String) return failureNel(new ParseError(err(s), path));
+
     return switch schema {
-      case IntSchema:   parseInt(v).leftMapNel(errAt(path));
-      case FloatSchema: parseFloat(v).leftMapNel(errAt(path));
-      case StrSchema:   parseString(v).leftMapNel(errAt(path));
-      case BoolSchema:  parseBool(v).leftMapNel(errAt(path));
-      case UnitSchema:  successNel(unit);
+      case IntSchema:   parseInt(v).leftMapNel(failure);
+      case FloatSchema: parseFloat(v).leftMapNel(failure);
+      case StrSchema:   parseString(v).leftMapNel(failure);
+      case BoolSchema:  parseBool(v).leftMapNel(failure);
+      case ConstSchema(a):  successNel(a);
 
-      case ObjectSchema(propSchema): parseObject(propSchema, v, path);
-      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parse0(elemSchema, x, path * i), errAt(path));
-      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(elemSchema, x, path / s), errAt(path));
+      case ObjectSchema(propSchema): parseObject(path, propSchema, err, v);
+      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parse0(path * i, elemSchema, err, x), failure);
+      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(path / s, elemSchema, err, x), failure);
 
       case OneOfSchema(alternatives):
         if (alternatives.all.fn(_.isConstantAlt())) {
           // all of the alternatives are constant-valued, so there is no need to encode
           // on any data and we can use the identifier as a bare encoding rather
           // than an object key.
-          parseString(v).leftMapNel(errAt(path)).flatMapV(
+          parseString(v).leftMapNel(failure).flatMapV(
             function(s: String) {
               var id0 = s.toLowerCase();
               return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
-                case Some(Prism(id, altSchema, f, _)): parse0(altSchema, v, path / id).map(f);
-                case None: fail('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]', path);
+                case Some(Prism(id, altSchema, f, _)): parse0(path / id, altSchema, err, v).map(f);
+                case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
             }
           );
@@ -72,43 +75,51 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, _)]:
-              var parser = if (base.isConstant()) parseNullableProperty else parseProperty.bind(_, _, _, ParseError.new.bind(_, path));
-              parser(v, id, parse0.bind(base, _, path / id)).map(f);
+              var baseParser = parse0.bind(path / id, base, err, _);
+              var res = if (base.isConstant()) parseNullableProperty(v, id, baseParser)
+                        else parseProperty(v, id, baseParser, function(s: String) return new ParseError(err(s), path));
+
+              res.map(f);
 
             case other:
               if (other.length == 0) {
-                fail('Could not match type identifier from among ${alternatives.map.fn(_.id())} in object with fields $fields.', path);
+                failNel('Could not match type identifier from among ${alternatives.map.fn(_.id())} in object with fields $fields.');
               } else {
                 // throw here, because this is a programmer error, not a user error.
                 throw new thx.Error('More than one alternative bound to the same schema at path ${path.toString()}!');
               }
           };
         } else {
-          fail('$v is not an anonymous object structure, as required for the representation of values of "oneOf" type.', path);
+          failNel('$v is not an anonymous object structure, as required for the representation of values of "oneOf" type.');
         };
 
-      case IsoSchema(base, f, _): 
-        parse0(base, v, path).map(f);
+      case ParseSchema(base, f, _): 
+        parse0(path, base, err, v).flatMapV(
+          function(a) return switch f(a) {
+            case PSuccess(result): successNel(result);
+            case PFailure(error, _):  failureNel(new ParseError(error, path));
+          }
+        );
 
       case LazySchema(base): 
-        parse0(base(), v, path);
+        parse0(path, base(), err, v);
     };
   }
 
-  private static function parseObject<O, A>(builder: ObjectBuilder<O, A>, v: Dynamic, path: SPath): VNel<ParseError, A> {
+  private static function parseObject<O, A, E>(path: SPath, builder: ObjectBuilder<O, A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     // helper function used to unpack existential type I
-    inline function go<I>(schema: PropSchema<O, I>, k: ObjectBuilder<O, I -> A>): VNel<ParseError, A> {
-      var parsedOpt: VNel<ParseError, I> = switch schema {
+    inline function go<I>(schema: PropSchema<O, I, E>, k: ObjectBuilder<O, I -> A, E>): VNel<ParseError<E>, A> {
+      var parsedOpt: VNel<ParseError<E>, I> = switch schema {
         case Required(fieldName, valueSchema, _):
-          parseOptionalProperty(v, fieldName, parse0.bind(valueSchema, _, path / fieldName)).flatMapV.fn(
-            _.toSuccessNel(new ParseError('Value $v does not contain field $fieldName and no default was available.', path))
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).flatMapV.fn(
+            _.toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
         case Optional(fieldName, valueSchema, _):
-          parseOptionalProperty(v, fieldName, parse0.bind(valueSchema, _, path / fieldName));
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _));
       };
 
-      return parsedOpt.ap(parseObject(k, v, path), Nel.semigroup());
+      return parsedOpt.ap(parseObject(path, k, err, v), Nel.semigroup());
     }
 
     return if (Types.isAnonymousObject(v)) {
@@ -117,23 +128,17 @@ class SchemaDynamicExtensions {
         case Ap(s, k): go(s, k);
       };
     } else {
-      fail('$v is not an anonymous object structure}).', path);
+      failureNel(new ParseError(err('$v is not an anonymous object structure}).'), path));
     };
   }
 
-  inline static public function errAt<A>(path: SPath): String -> ParseError
-    return ParseError.new.bind(_, path);
-
-  inline static public function fail<A>(message: String, path: SPath): VNel<ParseError, A>
-    return failureNel(new ParseError(message, path));
-
-  public static function renderDynamic<A>(schema: Schema<A>, value: A): Dynamic {
+  public static function renderDynamic<A, E>(schema: Schema<A, E>, value: A): Dynamic {
     return switch schema {
       case IntSchema:   value;
       case FloatSchema: value;
       case StrSchema:   value;
       case BoolSchema:  value;
-      case UnitSchema:  value;
+      case ConstSchema(v):  v;
 
       case ObjectSchema(propSchema):
         renderDynObject(propSchema, value);
@@ -160,10 +165,10 @@ class SchemaDynamicExtensions {
             }
 
           case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.stype()}');
-          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schema.stype}.');
+          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schema.stype()}.');
         }
 
-      case IsoSchema(base, _, g): 
+      case ParseSchema(base, _, g): 
         renderDynamic(base, g(value));
 
       case LazySchema(base): 
@@ -171,7 +176,7 @@ class SchemaDynamicExtensions {
     }
   }
 
-  public static function renderDynObject<A>(builder: ObjectBuilder<A, A>, value: A): Dynamic {
+  public static function renderDynObject<A, E>(builder: ObjectBuilder<A, A, E>, value: A): Dynamic {
     var m: Map<String, Dynamic> = evalRO(builder, value).runLog();
     return m.toObject();
   }
@@ -192,7 +197,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function evalRO<O, X>(builder: ObjectBuilder<O, X>, value: O): Writer<Map<String, Dynamic>, X>
+  private static function evalRO<O, X, E>(builder: ObjectBuilder<O, X, E>, value: O): Writer<Map<String, Dynamic>, X>
     return switch builder {
       case Pure(a): Writer.pure(a, wm);
       case Ap(s, k): goRO(s, k, value);
@@ -200,7 +205,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function goRO<O, I, J>(schema: PropSchema<O, I>, k: ObjectBuilder<O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
+  private static function goRO<O, I, J, E>(schema: PropSchema<O, I, E>, k: ObjectBuilder<O, I -> J, E>, value: O): Writer<Map<String, Dynamic>, J> {
     var action: Writer<Map<String, Dynamic>, I> = switch schema {
       case Required(field, valueSchema, accessor):
         var i0 = accessor(value);
@@ -217,16 +222,16 @@ class SchemaDynamicExtensions {
   }
 }
 
-class ParseError {
-  public var message(default, null): String;
+class ParseError<E> {
+  public var error(default, null): E;
   public var path(default, null): SPath;
 
-  public function new(message: String, path: SPath) {
-    this.message = message;
+  public function new(error: E, path: SPath) {
+    this.error = error;
     this.path = path;
   }
 
   public function toString(): String {
-    return '${path.toString()}: ${message}';
+    return '${path.toString()}: ${error}';
   }
 }

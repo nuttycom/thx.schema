@@ -19,7 +19,7 @@ class TestSchemaGenExtensions {
 
   public function testGen() {
     var ex: TEnum = EX(new TSimple(0));
-    var exemplar = TEnums.schema.exemplar();
+    var exemplar = TEnums.schema().exemplar();
     Assert.same(ex, exemplar);
   }
 }
