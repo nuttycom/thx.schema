@@ -2,7 +2,7 @@ package thx.schema;
 
 import haxe.ds.Option;
 import thx.Unit;
-import thx.schema.SchemaExtensions;
+import thx.schema.SchemaFExtensions;
 
 /**
  * A GADT describing the elements of a JSON-compatible Haxe object schema.

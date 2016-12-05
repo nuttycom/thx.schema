@@ -9,7 +9,7 @@ using thx.Arrays;
 using thx.Functions;
 using thx.Options;
 
-import thx.schema.Schema;
+import thx.schema.SchemaF;
 
 /**
  * A couple of useful interpreters for SchemaF values. This class is intended

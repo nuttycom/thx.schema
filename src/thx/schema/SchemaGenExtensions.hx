@@ -6,7 +6,7 @@ import thx.Nothing;
 import thx.Validation;
 import thx.Validation.*;
 import thx.fp.Dynamics;
-import thx.schema.Schema;
+import thx.schema.SchemaF;
 
 using thx.Arrays;
 using thx.Functions;

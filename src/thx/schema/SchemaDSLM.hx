@@ -35,7 +35,7 @@ class SchemaDSLM {
     return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
   }
 
-  public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.Schema.SchemaF<E, X, Dynamic>>>) {
+  public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.SchemaF<E, X, Dynamic>>>) {
     var valueType = getValueType(constr);
     var fields = getFields(obj);
     var objectType = getObjectType(fields);

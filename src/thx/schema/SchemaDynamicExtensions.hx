@@ -24,9 +24,9 @@ using thx.Maps;
 using thx.Options;
 using thx.Validation.ValidationExtensions;
 
-import thx.schema.Schema;
+import thx.schema.SchemaF;
 import thx.schema.SchemaDSL.*;
-using thx.schema.SchemaExtensions;
+using thx.schema.SchemaFExtensions;
 
 class SchemaDynamicExtensions {
   public static function parse<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {

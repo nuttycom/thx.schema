@@ -8,8 +8,8 @@ import thx.Functions.identity;
 import thx.fp.Functions.const;
 using thx.Bools;
 
-import thx.schema.Schema;
-using thx.schema.SchemaExtensions;
+import thx.schema.SchemaF;
+using thx.schema.SchemaFExtensions;
 
 typedef Schema<E, A> = AnnotatedSchema<E, Unit, A>
 
