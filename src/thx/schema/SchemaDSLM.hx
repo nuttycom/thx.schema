@@ -35,7 +35,7 @@ class SchemaDSLM {
     return macro thx.schema.SchemaDSL.alt($id, $sub, $constr, $f);
   }
 
-  public static function make<E>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<Schema<Dynamic, E>>>) {
+  public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.Schema.SchemaF<E, X, Dynamic>>>) {
     var valueType = getValueType(constr);
     var fields = getFields(obj);
     var objectType = getObjectType(fields);
@@ -54,8 +54,8 @@ class SchemaDSLM {
 
   static function isSchema(e: Expr) {
     return switch Context.typeof(e) {
-      case TEnum(_, [_, type]): true; // TODO make the match stricter
-      case TFun(_, TEnum(_, [_, type])): true;
+      case TEnum(_, [_, _, type]): true; // TODO make the match stricter
+      case TFun(_, TEnum(_, [_, _, type])): true;
       case _: false;
     };
   }
@@ -70,8 +70,8 @@ class SchemaDSLM {
     }
     return fieldData.map(function(field) {
       var t = switch Context.typeof(field.expr) {
-        case TEnum(_, [_, type]): type; // TODO make the match stricter
-        case TFun(_, TEnum(_, [_, type])): type;
+        case TEnum(_, [_, _, type]): type; // TODO make the match stricter
+        case TFun(_, TEnum(_, [_, _, type])): type;
         case _: Context.error('invalid schema type for `{$field.field}` [found ${field.expr}]', Context.currentPos());
       }
       return {
