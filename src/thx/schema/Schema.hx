@@ -7,52 +7,52 @@ import haxe.ds.Option;
  * Generally, you shouldn't use the constructors of this type
  * directly, but instead use those provided as convenience methods in SchemaDSL.
  */
-enum Schema<A, E> {
-  BoolSchema:  Schema<Bool, E>;
-  FloatSchema: Schema<Float, E>;
-  IntSchema:   Schema<Int, E>;
-  StrSchema:   Schema<String, E>;
+enum Schema<E, A> {
+  BoolSchema:  Schema<E, Bool>;
+  FloatSchema: Schema<E, Float>;
+  IntSchema:   Schema<E, Int>;
+  StrSchema:   Schema<E, String>;
 
-  ObjectSchema<B>(propSchema: ObjectBuilder<B, B, E>): Schema<B, E>;
-  ArraySchema<B>(elemSchema: Schema<B, E>): Schema<Array<B>, E>;
-  MapSchema<B>(elemSchema: Schema<B, E>): Schema<Map<String, B>, E>; // interpret as a String-keyed map instead of an object value
+  ObjectSchema<B>(propSchema: ObjectBuilder<E, B, B>): Schema<E, B>;
+  ArraySchema<B>(elemSchema: Schema<E, B>): Schema<E, Array<B>>;
+  MapSchema<B>(elemSchema: Schema<E, B>): Schema<E, Map<String, B>>; // interpret as a String-keyed map instead of an object value
 
   // schema for sum types
-  OneOfSchema<B>(alternatives: Array<Alternative<B, E>>): Schema<B, E>;
+  OneOfSchema<B>(alternatives: Array<Alternative<E, B>>): Schema<E, B>;
 
   // This allows us to create schemas that impose more constraints on
   // the type of source data than merely being isomorphic to a primitive
   // value type.
-  ParseSchema<B, C>(base: Schema<B, E>, f: B -> ParseResult<B, C, E>, g: C -> B): Schema<C, E>;
+  ParseSchema<B, C>(base: Schema<E, B>, f: B -> ParseResult<E, B, C>, g: C -> B): Schema<E, C>;
 
   // Schema that always parses to or generates a constant value. 
-  ConstSchema<B>(value: B): Schema<B, E>;
+  ConstSchema<B>(value: B): Schema<E, B>;
 
   // Lazy wrapper for schema values to permit recursive schema definitions.
-  LazySchema<B>(delay: Void -> Schema<B, E>): Schema<B, E>;
+  LazySchema<B>(delay: Void -> Schema<E, B>): Schema<E, B>;
 }
 
-enum ParseResult<S, A, E> {
+enum ParseResult<E, S, A> {
   PSuccess(result: A);
   PFailure(error: E, sourceData: S);
 }
 
-enum Alternative<A, E> {
-  Prism<A, B>(id: String, base: Schema<B, E>, f: B -> A, g: A -> Option<B>): Alternative<A, E>;
+enum Alternative<E, A> {
+  Prism<A, B>(id: String, base: Schema<E, B>, f: B -> A, g: A -> Option<B>): Alternative<E, A>;
 }
 
-enum PropSchema<O, A, E> {
-  Required<B>(fieldName: String, valueSchema: Schema<B, E>, accessor: O -> B): PropSchema<O, B, E>;
-  Optional<B>(fieldName: String, valueSchema: Schema<B, E>, accessor: O -> Option<B>): PropSchema<O, Option<B>, E>;
+enum PropSchema<E, O, A> {
+  Required<B>(fieldName: String, valueSchema: Schema<E, B>, accessor: O -> B): PropSchema<E, O, B>;
+  Optional<B>(fieldName: String, valueSchema: Schema<E, B>, accessor: O -> Option<B>): PropSchema<E, O, Option<B>>;
 }
 
 /** Free applicative construction of builder for a set of object properties. */
-enum ObjectBuilder<O, A, E> {
+enum ObjectBuilder<E, O, A> {
   Pure(a: A);
-  Ap<I>(s: PropSchema<O, I, E>, k: ObjectBuilder<O, I -> A, E>);
+  Ap<I>(s: PropSchema<E, O, I>, k: ObjectBuilder<E, O, I -> A>);
 }
 
-typedef HomObjectBuilder<A, E> = ObjectBuilder<A, A, E>;
+typedef HomObjectBuilder<E, A> = ObjectBuilder<E, A, A>;
 
 enum SType {
   BoolSType;

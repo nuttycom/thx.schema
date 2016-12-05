@@ -20,7 +20,7 @@ class TSimple {
     this.x = x;
   }
 
-  public static function schema<E>(): Schema<TSimple, E> return object(required("x", int(), function(ts: TSimple) return ts.x).map(TSimple.new));
+  public static function schema<E>(): Schema<E, TSimple> return object(required("x", int(), function(ts: TSimple) return ts.x).map(TSimple.new));
 }
 
 class TComplex {
@@ -38,7 +38,7 @@ class TComplex {
     this.o = o;
   }
 
-  public static function schema<E>(): Schema<TComplex, E> return object(
+  public static function schema<E>(): Schema<E, TComplex> return object(
     ap5(
       TComplex.new,
       required("i", int(), function(tc: TComplex) return tc.i),
@@ -59,7 +59,7 @@ class TRec {
     this.rec = rec;
   }
 
-  public static function schema<E>(): Schema<TRec, E> return object(
+  public static function schema<E>(): Schema<E, TRec> return object(
     ap2(
       TRec.new,
       required("i", int(), function(tc: TRec) return tc.i),
@@ -78,7 +78,7 @@ enum TEnum {
 typedef EYO = {s: String, i: Int}
 
 class TEnums {
-  public static function schema<E>(): Schema<TEnum, E> return oneOf([
+  public static function schema<E>(): Schema<E, TEnum> return oneOf([
     alt("ex", TSimple.schema(), function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
     alt("ey", 
       object(
@@ -169,7 +169,7 @@ class TestSchema {
   }
 
   public function testEnum() {
-    var schema: Schema<TEnumMulti, String> = oneOf([
+    var schema: Schema<String, TEnumMulti> = oneOf([
       makeAlt("a", A),
       makeAlt("b", B, { i: int() }),
       makeAlt("c", C, { b: bool(), f: float() }),

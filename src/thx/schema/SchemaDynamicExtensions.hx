@@ -29,15 +29,15 @@ import thx.schema.SchemaDSL.*;
 using thx.schema.SchemaExtensions;
 
 class SchemaDynamicExtensions {
-  public static function parse<A, E>(schema: Schema<A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  public static function parse<A, E>(schema: Schema<E, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     return parse0(SPath.root, schema, err, v);
   }
 
-  public static function parser<A, E>(schema: Schema<A, E>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
+  public static function parser<A, E>(schema: Schema<E, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
     return parse0.bind(SPath.root, schema, err, _);
   }
 
-  private static function parse0<A, E>(path: SPath, schema: Schema<A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  private static function parse0<A, E>(path: SPath, schema: Schema<E, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     function failure(s: String) return new ParseError(err(s), path);
     function failNel(s: String) return failureNel(new ParseError(err(s), path));
 
@@ -106,9 +106,9 @@ class SchemaDynamicExtensions {
     };
   }
 
-  private static function parseObject<O, A, E>(path: SPath, builder: ObjectBuilder<O, A, E>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  private static function parseObject<E, O, A>(path: SPath, builder: ObjectBuilder<E, O, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     // helper function used to unpack existential type I
-    inline function go<I>(schema: PropSchema<O, I, E>, k: ObjectBuilder<O, I -> A, E>): VNel<ParseError<E>, A> {
+    inline function go<I>(schema: PropSchema<E, O, I>, k: ObjectBuilder<E, O, I -> A>): VNel<ParseError<E>, A> {
       var parsedOpt: VNel<ParseError<E>, I> = switch schema {
         case Required(fieldName, valueSchema, _):
           parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).flatMapV.fn(
@@ -132,7 +132,7 @@ class SchemaDynamicExtensions {
     };
   }
 
-  public static function renderDynamic<A, E>(schema: Schema<A, E>, value: A): Dynamic {
+  public static function renderDynamic<E, A>(schema: Schema<E, A>, value: A): Dynamic {
     return switch schema {
       case IntSchema:   value;
       case FloatSchema: value;
@@ -176,7 +176,7 @@ class SchemaDynamicExtensions {
     }
   }
 
-  public static function renderDynObject<A, E>(builder: ObjectBuilder<A, A, E>, value: A): Dynamic {
+  public static function renderDynObject<A, E>(builder: ObjectBuilder<E, A, A>, value: A): Dynamic {
     var m: Map<String, Dynamic> = evalRO(builder, value).runLog();
     return m.toObject();
   }
@@ -197,7 +197,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function evalRO<O, X, E>(builder: ObjectBuilder<O, X, E>, value: O): Writer<Map<String, Dynamic>, X>
+  private static function evalRO<E, O, X>(builder: ObjectBuilder<E, O, X>, value: O): Writer<Map<String, Dynamic>, X>
     return switch builder {
       case Pure(a): Writer.pure(a, wm);
       case Ap(s, k): goRO(s, k, value);
@@ -205,7 +205,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function goRO<O, I, J, E>(schema: PropSchema<O, I, E>, k: ObjectBuilder<O, I -> J, E>, value: O): Writer<Map<String, Dynamic>, J> {
+  private static function goRO<E, O, I, J>(schema: PropSchema<E, O, I>, k: ObjectBuilder<E, O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
     var action: Writer<Map<String, Dynamic>, I> = switch schema {
       case Required(field, valueSchema, accessor):
         var i0 = accessor(value);
