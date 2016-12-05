@@ -174,7 +174,7 @@ class TestSchema {
       makeAlt("a", A),
       makeAlt("b", B, { i: int().schema }),
       makeAlt("c", C, { b: bool().schema, f: float().schema }),
-      makeAlt("d", D, { s: string().schema, b: bool().schema, f: makeOptional(float().schema) })
+      makeAlt("d", D, { s: string().schema, b: bool().schema, f: makeOptional(float()).schema })
     ]);
     Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];

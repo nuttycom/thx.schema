@@ -14,46 +14,44 @@ using thx.schema.SchemaExtensions;
 typedef Schema<E, A> = AnnotatedSchema<E, Unit, A>
 
 class SchemaDSL {
-  public static function schema<E, A>(s: SchemaF<E, Unit, A>): Schema<E, A>
-    return new AnnotatedSchema(unit, s);
-
-  public static function lift<E, O, A>(s: PropSchema<E, Unit, O, A>): ObjectBuilder<E, Unit, O, A>
-    return Ap(s, Pure(function(a: A) return a));
-
   //
   // Constructors for terminal schema elements
   //
 
-  public static function bool<E>():   Schema<E, Bool>   return schema(BoolSchema);
-  public static function float<E>():  Schema<E, Float>  return schema(FloatSchema);
-  public static function int<E>():    Schema<E, Int>    return schema(IntSchema);
-  public static function string<E>(): Schema<E, String> return schema(StrSchema);
-  public static function constant<E, A>(a: A): Schema<E, A> return schema(ConstSchema(a));
+  public static function liftS<E, A>(s: SchemaF<E, Unit, A>): Schema<E, A>
+    return new AnnotatedSchema(unit, s);
+
+  public static function bool<E>():   Schema<E, Bool>   return liftS(BoolSchema);
+  public static function float<E>():  Schema<E, Float>  return liftS(FloatSchema);
+  public static function int<E>():    Schema<E, Int>    return liftS(IntSchema);
+  public static function string<E>(): Schema<E, String> return liftS(StrSchema);
+  public static function constant<E, A>(a: A): Schema<E, A> return liftS(ConstSchema(a));
 
   public static function array<E, A>(elemSchema: Schema<E, A>): Schema<E, Array<A>>
-    return schema(ArraySchema(elemSchema));
+    return liftS(ArraySchema(elemSchema));
 
   public static function map<E, A>(elemSchema: Schema<E, A>): Schema<E, Map<String, A>>
-    return schema(MapSchema(elemSchema));
+    return liftS(MapSchema(elemSchema));
 
   public static function object<E, A>(propSchema: ObjectBuilder<E, Unit, A, A>): Schema<E, A>
-    return schema(ObjectSchema(propSchema));
+    return liftS(ObjectSchema(propSchema));
 
   public static function oneOf<E, A>(alternatives: Array<Alternative<E, Unit, A>>): Schema<E, A>
-    return schema(OneOfSchema(alternatives));
+    return liftS(OneOfSchema(alternatives));
 
   public static function iso<E, A, B>(base: Schema<E, A>, f: A -> B, g: B -> A): Schema<E, B>
-    return schema(ParseSchema(base, function(a: A) return PSuccess(f(a)), g));
+    return liftS(ParseSchema(base, function(a: A) return PSuccess(f(a)), g));
 
   public static function parse<E, A, B>(base: Schema<E, A>, f: A -> ParseResult<E, A, B>, g: B -> A): Schema<E, B>
-    return schema(ParseSchema(base, f, g));
+    return liftS(ParseSchema(base, f, g));
 
   public static function lazy<E, A>(base: Void -> Schema<E, A>): Schema<E, A>
-    return schema(LazySchema(base));
+    return liftS(LazySchema(base));
 
   //
   // Constructors for oneOf alternatives
   //
+
   public static function alt<E, A, B>(id: String, base: Schema<E, B>, f: B -> A, g: A -> Option<B>): Alternative<E, Unit, A>
     return Prism(id, base, f, g);
 
@@ -76,11 +74,14 @@ class SchemaDSL {
   // Constructors for object properties.
   //
 
+  public static function liftPS<E, O, A>(s: PropSchema<E, Unit, O, A>): ObjectBuilder<E, Unit, O, A>
+    return Ap(s, Pure(function(a: A) return a));
+
   public static function required<E, O, A>(fieldName: String, valueSchema: Schema<E, A>, accessor: O -> A): ObjectBuilder<E, Unit, O, A>
-    return lift(Required(fieldName, valueSchema, accessor));
+    return liftPS(Required(fieldName, valueSchema, accessor));
 
   public static function optional<E, O, A>(fieldName: String, valueSchema: Schema<E, A>, accessor: O -> Option<A>): ObjectBuilder<E, Unit, O, Option<A>>
-    return lift(Optional(fieldName, valueSchema, accessor));
+    return liftPS(Optional(fieldName, valueSchema, accessor));
 
   // Convenience constructor for a single-property object schema that simply wraps another schema.
   public static function wrap<E, A>(fieldName: String, valueSchema: Schema<E, A>): Schema<E, A>
@@ -89,6 +90,7 @@ class SchemaDSL {
   //
   // Combinators for building complex schemas
   //
+
   inline static public function ap1<E, X, O, A, B>(
       f: A -> B,
       v1: ObjectBuilder<E, X, O, A>): ObjectBuilder<E, X, O, B>

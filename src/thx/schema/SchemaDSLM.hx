@@ -32,7 +32,7 @@ class SchemaDSLM {
 
   public static function make1(id: ExprOf<String>, constr: Expr, sub: Expr) {
     var f = oneValue2Obj(constr);
-    return macro thx.schema.SchemaDSL.alt($id, $sub, $constr, $f);
+    return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
   }
 
   public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.Schema.SchemaF<E, X, Dynamic>>>) {
@@ -44,7 +44,7 @@ class SchemaDSLM {
       var name = field.name,
           expr = field.expr,
           ftype = field.ctype;
-      return macro required($v{name}, $expr, function(v: $objectType): $ftype return v.$name);
+      return macro required($v{name}, thx.schema.SchemaDSL.liftS($expr), function(v: $objectType): $ftype return v.$name);
     }));
 
     var apf = 'ap${fields.length}';
