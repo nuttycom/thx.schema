@@ -171,9 +171,9 @@ class TestSchema {
   public function testEnum() {
     var schema: Schema<String, TEnumMulti> = oneOf([
       makeAlt("a", A),
-      makeAlt("b", B, { i: int().schema }),
-      makeAlt("c", C, { b: bool().schema, f: float().schema }),
-      makeAlt("d", D, { s: string().schema, b: bool().schema, f: makeOptional(float()).schema })
+      makeAlt("b", B, { i: int() }),
+      makeAlt("c", C, { b: bool(), f: float() }),
+      makeAlt("d", D, { s: string(), b: bool(), f: makeOptional(float()) })
     ]);
     Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
@@ -189,7 +189,7 @@ class TestSchema {
 
   public function testEnumOneArgument() {
     var schema = oneOf([
-      makeAlt("b", B, int().schema)
+      makeAlt("b", B, int())
     ]);
     Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [B(1)];
