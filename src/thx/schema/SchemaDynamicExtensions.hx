@@ -107,9 +107,9 @@ class SchemaDynamicExtensions {
     };
   }
 
-  private static function parseObject<E, X, O, A>(path: SPath, builder: ObjectBuilder<E, X, O, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  private static function parseObject<E, X, O, A>(path: SPath, builder: PropsBuilder<E, X, O, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     // helper function used to unpack existential type I
-    inline function go<I>(ps: PropSchema<E, X, O, I>, k: ObjectBuilder<E, X, O, I -> A>): VNel<ParseError<E>, A> {
+    inline function go<I>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> A>): VNel<ParseError<E>, A> {
       var parsedOpt: VNel<ParseError<E>, I> = switch ps {
         case Required(fieldName, valueSchema, _):
           parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).flatMapV.fn(
@@ -178,7 +178,7 @@ class SchemaDynamicExtensions {
     }
   }
 
-  public static function renderDynObject<E, X, A>(builder: ObjectBuilder<E, X, A, A>, value: A): Dynamic {
+  public static function renderDynObject<E, X, A>(builder: ObjectBuilder<E, X, A>, value: A): Dynamic {
     var m: Map<String, Dynamic> = evalRO(builder, value).runLog();
     return m.toObject();
   }
@@ -199,7 +199,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function evalRO<E, X, O, A>(builder: ObjectBuilder<E, X, O, A>, value: O): Writer<Map<String, Dynamic>, A>
+  private static function evalRO<E, X, O, A>(builder: PropsBuilder<E, X, O, A>, value: O): Writer<Map<String, Dynamic>, A>
     return switch builder {
       case Pure(a): Writer.pure(a, wm);
       case Ap(s, k): goRO(s, k, value);
@@ -207,7 +207,7 @@ class SchemaDynamicExtensions {
 
   // should be inside renderObject, but haxe doesn't let you write corecursive
   // functions as inner functions
-  private static function goRO<E, X, O, I, J>(ps: PropSchema<E, X, O, I>, k: ObjectBuilder<E, X, O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
+  private static function goRO<E, X, O, I, J>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
     var action: Writer<Map<String, Dynamic>, I> = switch ps {
       case Required(field, valueSchema, accessor):
         var i0 = accessor(value);

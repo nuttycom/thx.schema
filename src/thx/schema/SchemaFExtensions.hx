@@ -95,31 +95,31 @@ class ParseResultExtensions {
 }
 
 class ObjectSchemaExtensions {
-  public static function contramap<E, X, N, O, A>(o: ObjectBuilder<E, X, O, A>, f: N -> O): ObjectBuilder<E, X, N, A>
+  public static function contramap<E, X, N, O, A>(o: PropsBuilder<E, X, O, A>, f: N -> O): PropsBuilder<E, X, N, A>
     return switch o {
       case Pure(a): Pure(a);
       case Ap(s, k): Ap(PropSchemaExtensions.contramap(s, f), contramap(k, f));
     }
 
-  public static function map<E, X, O, A, B>(o: ObjectBuilder<E, X, O, A>, f: A -> B): ObjectBuilder<E, X, O, B>
+  public static function map<E, X, O, A, B>(o: PropsBuilder<E, X, O, A>, f: A -> B): PropsBuilder<E, X, O, B>
     return switch o {
       case Pure(a): Pure(f(a));
       case Ap(s, k): Ap(s, map(k, f.compose));
     };
 
-  public static function ap<E, X, O, A, B>(o: ObjectBuilder<E, X, O, A>, f: ObjectBuilder<E, X, O, A -> B>): ObjectBuilder<E, X, O, B>
+  public static function ap<E, X, O, A, B>(o: PropsBuilder<E, X, O, A>, f: PropsBuilder<E, X, O, A -> B>): PropsBuilder<E, X, O, B>
     return switch f {
       case Pure(g): map(o, g);
       case Ap(s, k): Ap(s, ap(o, map(k, flip)));
     };
 
-  public static function mapAnnotation<E, X, Y, O, A>(o: ObjectBuilder<E, X, O, A>, f: X -> Y): ObjectBuilder<E, Y, O, A>
+  public static function mapAnnotation<E, X, Y, O, A>(o: PropsBuilder<E, X, O, A>, f: X -> Y): PropsBuilder<E, Y, O, A>
     return switch o {
       case Ap(s, k): Ap(PropSchemaExtensions.mapAnnotation(s, f), mapAnnotation(k, f));
       case Pure(g): Pure(g);
     };
 
-  public static function mapError<E, F, X, O, A>(o: ObjectBuilder<E, X, O, A>, e: E -> F): ObjectBuilder<F, X, O, A>
+  public static function mapError<E, F, X, O, A>(o: PropsBuilder<E, X, O, A>, e: E -> F): PropsBuilder<F, X, O, A>
     return switch o {
       case Pure(g): Pure(g);
       case Ap(s, k): Ap(PropSchemaExtensions.mapError(s, e), mapError(k, e));

@@ -26,7 +26,7 @@ enum SchemaF<E, X, A> {
   // that makes this explicit, and thx.Any does the trick.
   AnySchema: SchemaF<E, X, thx.Any>;
 
-  ObjectSchema<B>(propSchema: ObjectBuilder<E, X, B, B>): SchemaF<E, X, B>;
+  ObjectSchema<B>(propSchema: ObjectBuilder<E, X, B>): SchemaF<E, X, B>;
   ArraySchema<B>(elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Array<B>>;
   MapSchema<B>(elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Map<String, B>>; // interpret as a String-keyed map instead of an object value
 
@@ -76,12 +76,12 @@ enum PropSchema<E, X, O, A> {
 }
 
 /** Free applicative construction of builder for a set of object properties. */
-enum ObjectBuilder<E, X, O, A> {
+enum PropsBuilder<E, X, O, A> {
   Pure(a: A);
-  Ap<I>(s: PropSchema<E, X, O, I>, k: ObjectBuilder<E, X, O, I -> A>);
+  Ap<I>(s: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> A>);
 }
 
-typedef HomObjectBuilder<E, X, A> = ObjectBuilder<E, X, A, A>;
+typedef ObjectBuilder<E, X, A> = PropsBuilder<E, X, A, A>;
 
 enum SType {
   BoolSType;
