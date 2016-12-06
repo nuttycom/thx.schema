@@ -4,6 +4,8 @@ import haxe.ds.Option;
 import thx.Unit;
 import thx.schema.SchemaFExtensions;
 
+typedef Const<A, B> = A;
+
 /**
  * A GADT describing the elements of a JSON-compatible Haxe object schema.
  * Generally, you shouldn't use the constructors of this type
@@ -14,6 +16,15 @@ enum SchemaF<E, X, A> {
   FloatSchema: SchemaF<E, X, Float>;
   IntSchema:   SchemaF<E, X, Int>;
   StrSchema:   SchemaF<E, X, String>;
+
+  // schema that always parses to or generates a constant value. 
+  ConstSchema<B>(value: B): SchemaF<E, X, B>;
+
+  // we need a schema that can represent the idea that, in parsing, the
+  // parser simply passes the value being parsed unmodified to the resulting
+  // object constructor. In order to do so, we have to wrap it in a type
+  // that makes this explicit, and thx.Any does the trick.
+  AnySchema: SchemaF<E, X, thx.Any>;
 
   ObjectSchema<B>(propSchema: ObjectBuilder<E, X, B, B>): SchemaF<E, X, B>;
   ArraySchema<B>(elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Array<B>>;
@@ -27,8 +38,6 @@ enum SchemaF<E, X, A> {
   // value type.
   ParseSchema<B, C>(base: AnnotatedSchema<E, X, B>, f: B -> ParseResult<E, B, C>, g: C -> B): SchemaF<E, X, C>;
 
-  // schema that always parses to or generates a constant value. 
-  ConstSchema<B>(value: B): SchemaF<E, X, B>;
 
   // lazy wrapper for schema values to permit recursive schema definitions.
   LazySchema<B>(delay: Void -> AnnotatedSchema<E, X, B>): SchemaF<E, X, B>;
@@ -79,6 +88,7 @@ enum SType {
   FloatSType;
   IntSType;
   StrSType;
+  AnySType;
   ConstSType;
   ObjectSType;
   ArraySType;

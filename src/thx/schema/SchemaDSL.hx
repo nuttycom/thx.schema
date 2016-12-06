@@ -25,6 +25,7 @@ class SchemaDSL {
   public static function float<E>():  Schema<E, Float>  return liftS(FloatSchema);
   public static function int<E>():    Schema<E, Int>    return liftS(IntSchema);
   public static function string<E>(): Schema<E, String> return liftS(StrSchema);
+  public static function any<E>():    Schema<E, thx.Any> return liftS(AnySchema);
   public static function constant<E, A>(a: A): Schema<E, A> return liftS(ConstSchema(a));
 
   public static function array<E, A>(elemSchema: Schema<E, A>): Schema<E, Array<A>>
@@ -52,7 +53,7 @@ class SchemaDSL {
   // Constructors for oneOf alternatives
   //
 
-  public static function alt<E, A, B>(id: String, base: Schema<E, B>, f: B -> A, g: A -> Option<B>): Alternative<E, Unit, A>
+  public static function alt<E, X, A, B>(id: String, base: AnnotatedSchema<E, X, B>, f: B -> A, g: A -> Option<B>): Alternative<E, X, A>
     return Prism(id, base, f, g);
 
   public static function constAlt<E, B>(id: String, b: B, equal: B -> B -> Bool): Alternative<E, Unit, B>

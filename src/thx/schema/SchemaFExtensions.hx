@@ -27,6 +27,7 @@ class SchemaFExtensions {
       case FloatSchema: FloatSType;
       case IntSchema:   IntSType;
       case StrSchema:   StrSType;
+      case AnySchema:   AnySType;
       case ConstSchema(_):  ConstSType;
       case ObjectSchema(propSchema):  ObjectSType;
       case ArraySchema(elemSchema):   ArraySType;
@@ -50,6 +51,7 @@ class SchemaFExtensions {
       case FloatSchema: FloatSchema;
       case IntSchema:   IntSchema;
       case StrSchema:   StrSchema;
+      case AnySchema:   AnySchema;
       case ConstSchema(a):  ConstSchema(a);
       case ObjectSchema(propSchema):  ObjectSchema(ObjectSchemaExtensions.mapAnnotation(propSchema, f));
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapAnnotation(f));
@@ -66,6 +68,7 @@ class SchemaFExtensions {
       case FloatSchema: FloatSchema;
       case IntSchema:   IntSchema;
       case StrSchema:   StrSchema;
+      case AnySchema:   AnySchema;
       case ConstSchema(a):  ConstSchema(a);
       case ObjectSchema(propSchema):  ObjectSchema(ObjectSchemaExtensions.mapError(propSchema, e));
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapError(e));

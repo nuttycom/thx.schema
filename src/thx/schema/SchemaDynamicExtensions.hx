@@ -46,6 +46,7 @@ class SchemaDynamicExtensions {
       case FloatSchema: parseFloat(v).leftMapNel(failure);
       case StrSchema:   parseString(v).leftMapNel(failure);
       case BoolSchema:  parseBool(v).leftMapNel(failure);
+      case AnySchema:   successNel(v);
       case ConstSchema(a):  successNel(a);
 
       case ObjectSchema(propSchema): parseObject(path, propSchema, err, v);
@@ -138,6 +139,7 @@ class SchemaDynamicExtensions {
       case FloatSchema: value;
       case StrSchema:   value;
       case BoolSchema:  value;
+      case AnySchema:   value;
       case ConstSchema(v):  v;
 
       case ObjectSchema(propSchema):

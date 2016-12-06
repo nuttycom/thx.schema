@@ -24,8 +24,9 @@ class SchemaGenExtensions {
     return switch schema.schema {
       case FloatSchema:  0.0;
       case BoolSchema: false;
-      case IntSchema:  0;
-      case StrSchema:  "";
+      case IntSchema:      0;
+      case StrSchema:     "";
+      case AnySchema:   null;
       case ConstSchema(a): a;
 
       case OneOfSchema(alternatives): switch alternatives.head() {
