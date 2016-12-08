@@ -5,8 +5,8 @@ import thx.Either;
 
 import utest.Assert;
 
-import thx.schema.SchemaDSL;
-import thx.schema.SchemaDSL.*;
+import thx.schema.SimpleSchema;
+import thx.schema.SimpleSchema.*;
 import thx.schema.SchemaFDSL.*;
 
 using thx.schema.SchemaFExtensions;

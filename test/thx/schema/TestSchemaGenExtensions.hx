@@ -7,7 +7,7 @@ import thx.Either;
 import utest.Assert;
 
 import thx.schema.SchemaF;
-import thx.schema.SchemaDSL.*;
+import thx.schema.SimpleSchema.*;
 import thx.schema.TestSchema;
 
 using thx.schema.SchemaFExtensions;

@@ -9,7 +9,7 @@ typedef Const<A, B> = A;
 /**
  * A GADT describing the elements of a JSON-compatible Haxe object schema.
  * Generally, you shouldn't use the constructors of this type
- * directly, but instead use those provided as convenience methods in SchemaDSL.
+ * directly, but instead use those provided as convenience methods in SimpleSchema.
  */
 enum SchemaF<E, X, A> {
   BoolSchema:  SchemaF<E, X, Bool>;

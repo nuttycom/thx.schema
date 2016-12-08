@@ -14,7 +14,7 @@ using thx.schema.SchemaFExtensions;
 
 typedef Schema<E, A> = AnnotatedSchema<E, Unit, A>
 
-class SchemaDSL {
+class SimpleSchema {
   //
   // Constructors for terminal schema elements
   //

@@ -25,7 +25,7 @@ using thx.Options;
 using thx.Validation.ValidationExtensions;
 
 import thx.schema.SchemaF;
-import thx.schema.SchemaDSL.*;
+import thx.schema.SimpleSchema.*;
 using thx.schema.SchemaFExtensions;
 
 class SchemaDynamicExtensions {

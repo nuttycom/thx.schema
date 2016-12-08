@@ -14,7 +14,7 @@ class SchemaDSLM {
       Context.error('too many arguments', Context.currentPos());
     var constr = rest[0];
     return if(rest.length == 1) {
-      macro thx.schema.SchemaDSL.constEnum($id, $constr);
+      macro thx.schema.SimpleSchema.constEnum($id, $constr);
     } else if(rest.length == 2) {
         if(isSchema(rest[1])) {
           make1(id, constr, rest[1]);
@@ -32,7 +32,7 @@ class SchemaDSLM {
 
   public static function make1(id: ExprOf<String>, constr: Expr, sub: Expr) {
     var f = oneValue2Obj(constr);
-    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
+    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SimpleSchema.liftS($sub), $constr, $f);
   }
 
   public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.SchemaF<E, X, Dynamic>>>) {
@@ -44,12 +44,12 @@ class SchemaDSLM {
       var name = field.name,
           expr = field.expr,
           ftype = field.ctype;
-      return macro required($v{name}, thx.schema.SchemaDSL.liftS($expr), function(v: $objectType): $ftype return v.$name);
+      return macro required($v{name}, thx.schema.SimpleSchema.liftS($expr), function(v: $objectType): $ftype return v.$name);
     }));
 
     var apf = 'ap${fields.length}';
     var s2v = obj2Value(constr, fields, objectType, valueType);
-    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SchemaDSL.object($i{apf}($a{args})), $s2v, $extr);
+    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SimpleSchema.object($i{apf}($a{args})), $s2v, $extr);
   }
 
   static function isSchema(e: Expr) {
