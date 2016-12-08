@@ -32,7 +32,7 @@ class SchemaDSLM {
 
   public static function make1(id: ExprOf<String>, constr: Expr, sub: Expr) {
     var f = oneValue2Obj(constr);
-    return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
+    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
   }
 
   public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.SchemaF<E, X, Dynamic>>>) {
@@ -49,7 +49,7 @@ class SchemaDSLM {
 
     var apf = 'ap${fields.length}';
     var s2v = obj2Value(constr, fields, objectType, valueType);
-    return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.object($i{apf}($a{args})), $s2v, $extr);
+    return macro thx.schema.SchemaFDSL.alt($id, thx.schema.SchemaDSL.object($i{apf}($a{args})), $s2v, $extr);
   }
 
   static function isSchema(e: Expr) {
