@@ -30,18 +30,18 @@ using thx.schema.SchemaFExtensions;
 
 class SchemaDynamicExtensions {
   public static function parse<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
-    return parse0(SPath.root, schema, err, v);
+    return parse0(SPath.root, schema.schema, err, v);
   }
 
   public static function parser<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
-    return parse0.bind(SPath.root, schema, err, _);
+    return parse0.bind(SPath.root, schema.schema, err, _);
   }
 
-  private static function parse0<E, X, A>(path: SPath, schema: AnnotatedSchema<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  private static function parse0<E, X, A>(path: SPath, schemaf: SchemaF<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     function failure(s: String) return new ParseError(err(s), path);
     function failNel(s: String) return failureNel(new ParseError(err(s), path));
 
-    return switch schema.schema {
+    return switch schemaf {
       case IntSchema:   parseInt(v).leftMapNel(failure);
       case FloatSchema: parseFloat(v).leftMapNel(failure);
       case StrSchema:   parseString(v).leftMapNel(failure);
@@ -50,8 +50,8 @@ class SchemaDynamicExtensions {
       case ConstSchema(a):  successNel(a);
 
       case ObjectSchema(propSchema): parseObject(path, propSchema, err, v);
-      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parse0(path * i, elemSchema, err, x), failure);
-      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(path / s, elemSchema, err, x), failure);
+      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parse0(path * i, elemSchema.schema, err, x), failure);
+      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parse0(path / s, elemSchema.schema, err, x), failure);
 
       case OneOfSchema(alternatives):
         if (alternatives.all.fn(_.isConstantAlt())) {
@@ -62,7 +62,7 @@ class SchemaDynamicExtensions {
             function(s: String) {
               var id0 = s.toLowerCase();
               return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
-                case Some(Prism(id, altSchema, f, _)): parse0(path / id, altSchema, err, v).map(f);
+                case Some(Prism(id, altSchema, f, _)): parse0(path / id, altSchema.schema, err, v).map(f);
                 case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
             }
@@ -76,7 +76,7 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, _)]:
-              var baseParser = parse0.bind(path / id, base, err, _);
+              var baseParser = parse0.bind(path / id, base.schema, err, _);
               var res = if (base.schema.isConstant()) parseNullableProperty(v, id, baseParser)
                         else parseProperty(v, id, baseParser, function(s: String) return new ParseError(err(s), path));
 
@@ -112,12 +112,12 @@ class SchemaDynamicExtensions {
     inline function go<I>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> A>): VNel<ParseError<E>, A> {
       var parsedOpt: VNel<ParseError<E>, I> = switch ps {
         case Required(fieldName, valueSchema, _):
-          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).flatMapV.fn(
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema.schema, err, _)).flatMapV.fn(
             _.toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
         case Optional(fieldName, valueSchema, _, dflt):
-          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).map(
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema.schema, err, _)).map(
             function(result) return result.orElse(dflt)
           );
       };
@@ -136,7 +136,11 @@ class SchemaDynamicExtensions {
   }
 
   public static function renderDynamic<E, X, A>(schema: AnnotatedSchema<E, X, A>, value: A): Dynamic {
-    return switch schema.schema {
+    return renderDynamic0(schema.schema, value);
+  }
+
+  public static function renderDynamic0<E, X, A>(schemaf: SchemaF<E, X, A>, value: A): Dynamic {
+    return switch schemaf {
       case IntSchema:   value;
       case FloatSchema: value;
       case StrSchema:   value;
@@ -168,15 +172,15 @@ class SchemaDynamicExtensions {
               m.toObject();
             }
 
-          case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schema.schema.stype()}');
-          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schema.schema.stype()}.');
+          case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schemaf.stype()}');
+          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schemaf.stype()}.');
         }
 
       case ParseSchema(base, _, g): 
-        renderDynamic(base, g(value));
+        renderDynamic0(base, g(value));
 
       case LazySchema(base): 
-        renderDynamic(base(), value);
+        renderDynamic0(base(), value);
     }
   }
 

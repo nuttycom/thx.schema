@@ -21,7 +21,11 @@ class SchemaGenExtensions {
    * TODO: Schema<A> -> Gen<A>
    */
   public static function exemplar<A, X>(schema: AnnotatedSchema<Nothing, X, A>): A {
-    return switch schema.schema {
+    return exemplar0(schema.schema);
+  }
+
+  public static function exemplar0<A, X>(schemaf: SchemaF<Nothing, X, A>): A {
+    return switch schemaf {
       case FloatSchema:  0.0;
       case BoolSchema: false;
       case IntSchema:      0;
@@ -33,7 +37,7 @@ class SchemaGenExtensions {
         case Prism(_, base, f, _): f(exemplar(base));
       }
 
-      case ParseSchema(base, f, g): switch f(exemplar(base)) {
+      case ParseSchema(base, f, g): switch f(exemplar0(base)) {
         case PSuccess(a): a;
         case PFailure(_, _): throw "Unreachable - one would have to construct an instance of the uninhabited Nothing type to get here.";
       }
@@ -41,7 +45,7 @@ class SchemaGenExtensions {
       case ObjectSchema(propSchema):  objectExemplar(propSchema);
       case ArraySchema(elemSchema):   [exemplar(elemSchema)];
       case MapSchema(elemSchema):     ["" => exemplar(elemSchema)];
-      case LazySchema(delay):         exemplar(delay());
+      case LazySchema(delay):         exemplar0(delay());
     }
   } 
 

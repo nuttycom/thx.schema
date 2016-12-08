@@ -64,7 +64,7 @@ class TRec {
     ap2(
       TRec.new,
       required("i", int(), function(tc: TRec) return tc.i),
-      required("rec", array(lazy(function() return TRec.schema())), function(tc: TRec) return tc.rec)
+      required("rec", array(lazy(function() return TRec.schema().schema)), function(tc: TRec) return tc.rec)
     )
   );
 }

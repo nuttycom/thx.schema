@@ -33,15 +33,15 @@ class SchemaFExtensions {
       case ArraySchema(elemSchema):   ArraySType;
       case MapSchema(elemSchema):     MapSType;
       case OneOfSchema(alternatives): OneOfSType;
-      case ParseSchema(base, f, g): stype(base.schema);
-      case LazySchema(base): stype(base().schema);
+      case ParseSchema(base, f, g): stype(base);
+      case LazySchema(base): stype(base()); // could diverge?
     };
 
   public static function isConstant<E, X, A>(schema: SchemaF<E, X, A>): Bool
     return switch schema {
       case ConstSchema(_): true;
-      case ParseSchema(s0, _, _): isConstant(s0.schema);
-      case LazySchema(fs): isConstant(fs().schema);
+      case ParseSchema(s0, _, _): isConstant(s0);
+      case LazySchema(fs): isConstant(fs()); // could diverge?
       case _: false;
     };
 
@@ -57,8 +57,8 @@ class SchemaFExtensions {
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapAnnotation(f));
       case MapSchema(elemSchema):     MapSchema(elemSchema.mapAnnotation(f));
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapAnnotation.bind(_, f)));
-      case ParseSchema(base, p, q):   ParseSchema(base.mapAnnotation(f), p, q);
-      case LazySchema(base):          LazySchema(function() return base().mapAnnotation(f));
+      case ParseSchema(base, p, q):   ParseSchema(mapAnnotation(base, f), p, q);
+      case LazySchema(base):          LazySchema(function() return mapAnnotation(base(), f));
     }
   }
 
@@ -74,8 +74,8 @@ class SchemaFExtensions {
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapError(e));
       case MapSchema(elemSchema):     MapSchema(elemSchema.mapError(e));
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapError.bind(_, e)));
-      case ParseSchema(base, f, g):   ParseSchema(base.mapError(e), function(b) return ParseResultExtensions.mapError(f(b), e), g);
-      case LazySchema(base):          LazySchema(function() return base().mapError(e));
+      case ParseSchema(base, f, g):   ParseSchema(mapError(base, e), function(b) return ParseResultExtensions.mapError(f(b), e), g);
+      case LazySchema(base):          LazySchema(function() return mapError(base(), e));
     };
   }
 }

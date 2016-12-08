@@ -36,11 +36,10 @@ enum SchemaF<E, X, A> {
   // this allows us to create schemas that impose more constraints on
   // the type of source data than merely being isomorphic to a primitive
   // value type.
-  ParseSchema<B, C>(base: AnnotatedSchema<E, X, B>, f: B -> ParseResult<E, B, C>, g: C -> B): SchemaF<E, X, C>;
-
+  ParseSchema<B, C>(base: SchemaF<E, X, B>, f: B -> ParseResult<E, B, C>, g: C -> B): SchemaF<E, X, C>;
 
   // lazy wrapper for schema values to permit recursive schema definitions.
-  LazySchema<B>(delay: Void -> AnnotatedSchema<E, X, B>): SchemaF<E, X, B>;
+  LazySchema<B>(delay: Void -> SchemaF<E, X, B>): SchemaF<E, X, B>;
 }
 
 class AnnotatedSchema<E, X, A> {
