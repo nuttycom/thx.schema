@@ -52,8 +52,8 @@ class SchemaGenExtensions {
   public static function objectExemplar<X, O, A>(builder: PropsBuilder<Nothing, X, O, A>): A {
     inline function go<I>(ps: PropSchema<Nothing, X, O, I>, k: PropsBuilder<Nothing, X, O, I -> A>): A {
       var i: I = switch ps {
-        case Required(_, s0, _): exemplar(s0);
-        case Optional(_, s0, _, _): Some(exemplar(s0));
+        case Required(_, s0, _, _): exemplar(s0);
+        case Optional(_, s0, _): Some(exemplar(s0));
       };
 
       return objectExemplar(k)(i);

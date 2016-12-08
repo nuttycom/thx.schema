@@ -111,15 +111,13 @@ class SchemaDynamicExtensions {
     // helper function used to unpack existential type I
     inline function go<I>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> A>): VNel<ParseError<E>, A> {
       var parsedOpt: VNel<ParseError<E>, I> = switch ps {
-        case Required(fieldName, valueSchema, _):
+        case Required(fieldName, valueSchema, _, dflt):
           parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema.schema, err, _)).flatMapV.fn(
-            _.toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
+            _.orElse(dflt).toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
-        case Optional(fieldName, valueSchema, _, dflt):
-          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema.schema, err, _)).map(
-            function(result) return result.orElse(dflt)
-          );
+        case Optional(fieldName, valueSchema, _):
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema.schema, err, _));
       };
 
       return parsedOpt.ap(parseObject(path, k, err, v), Nel.semigroup());
@@ -215,13 +213,13 @@ class SchemaDynamicExtensions {
   // functions as inner functions
   private static function goRO<E, X, O, I, J>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> J>, value: O): Writer<Map<String, Dynamic>, J> {
     var action: Writer<Map<String, Dynamic>, I> = switch ps {
-      case Required(field, valueSchema, accessor):
+      case Required(field, valueSchema, accessor, _):
         var i0 = accessor(value);
         Writer.tell([ field => renderDynamic(valueSchema, i0) ], wm) >>
         Writer.pure(i0, wm);
 
-      case Optional(field, valueSchema, accessor, dflt):
-        var i0 = accessor(value).orElse(dflt);
+      case Optional(field, valueSchema, accessor):
+        var i0 = accessor(value);
         Writer.tell(i0.cata(new Map(), function(v0) return [ field => renderDynamic(valueSchema, v0) ]), wm) >>
         Writer.pure(i0, wm);
     }

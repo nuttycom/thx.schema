@@ -29,13 +29,13 @@ class SchemaDSL {
     return Ap(s, Pure(function(a: A) return a));
 
   public static function required<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A): PropsBuilder<E, X, O, A>
-    return liftPS(Required(fieldName, valueSchema, accessor));
+    return liftPS(Required(fieldName, valueSchema, accessor, None));
 
   public static function optional<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Option<A>): PropsBuilder<E, X, O, Option<A>>
-    return liftPS(Optional(fieldName, valueSchema, accessor, None));
+    return liftPS(Optional(fieldName, valueSchema, accessor));
 
-  public static function optionalWithDefault<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Option<A>, dflt: A): PropsBuilder<E, X, O, Option<A>>
-    return liftPS(Optional(fieldName, valueSchema, accessor, Some(dflt)));
+  public static function property<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A, dflt: A): PropsBuilder<E, X, O, A>
+    return liftPS(Required(fieldName, valueSchema, accessor, Some(dflt)));
 
   //
   // Combinators for building complex schemas

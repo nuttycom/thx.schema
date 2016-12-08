@@ -129,20 +129,20 @@ class ObjectSchemaExtensions {
 class PropSchemaExtensions {
   public static function contramap<E, X, N, O, A>(s: PropSchema<E, X, O, A>, f: N -> O): PropSchema<E, X, N, A>
     return switch s {
-      case Required(n, s, a): Required(n, s, a.compose(f));
-      case Optional(n, s, a, d): Optional(n, s, a.compose(f), d);
+      case Required(n, s, a, d): Required(n, s, a.compose(f), d);
+      case Optional(n, s, a): Optional(n, s, a.compose(f));
     };
 
   public static function mapAnnotation<E, X, Y, O, A>(s: PropSchema<E, X, O, A>, f: X -> Y): PropSchema<E, Y, O, A>
     return switch s {
-      case Required(n, s, a): Required(n, s.mapAnnotation(f), a);
-      case Optional(n, s, a, d): Optional(n, s.mapAnnotation(f), a, d);
+      case Required(n, s, a, d): Required(n, s.mapAnnotation(f), a, d);
+      case Optional(n, s, a): Optional(n, s.mapAnnotation(f), a);
     }
 
   public static function mapError<E, F, X, O, A>(s: PropSchema<E, X, O, A>, e: E -> F): PropSchema<F, X, O, A>
     return switch s {
-      case Required(n, s, a): Required(n, s.mapError(e), a);
-      case Optional(n, s, a, d): Optional(n, s.mapError(e), a, d);
+      case Required(n, s, a, d): Required(n, s.mapError(e), a, d);
+      case Optional(n, s, a): Optional(n, s.mapError(e), a);
     }
 }
 
