@@ -72,7 +72,7 @@ enum Alternative<E, X, A> {
 
 enum PropSchema<E, X, O, A> {
   Required<B>(fieldName: String, valueSchema: AnnotatedSchema<E, X, B>, accessor: O -> B): PropSchema<E, X, O, B>;
-  Optional<B>(fieldName: String, valueSchema: AnnotatedSchema<E, X, B>, accessor: O -> Option<B>): PropSchema<E, X, O, Option<B>>;
+  Optional<B>(fieldName: String, valueSchema: AnnotatedSchema<E, X, B>, accessor: O -> Option<B>, dflt: Option<B>): PropSchema<E, X, O, Option<B>>;
 }
 
 /** Free applicative construction of builder for a set of object properties. */

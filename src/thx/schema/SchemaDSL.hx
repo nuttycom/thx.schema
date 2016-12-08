@@ -82,7 +82,10 @@ class SchemaDSL {
     return liftPS(Required(fieldName, valueSchema, accessor));
 
   public static function optional<E, O, A>(fieldName: String, valueSchema: Schema<E, A>, accessor: O -> Option<A>): PropsBuilder<E, Unit, O, Option<A>>
-    return liftPS(Optional(fieldName, valueSchema, accessor));
+    return liftPS(Optional(fieldName, valueSchema, accessor, None));
+
+  public static function optionalWithDefault<E, O, A>(fieldName: String, valueSchema: Schema<E, A>, accessor: O -> Option<A>, dflt: A): PropsBuilder<E, Unit, O, Option<A>>
+    return liftPS(Optional(fieldName, valueSchema, accessor, Some(dflt)));
 
   // Convenience constructor for a single-property object schema that simply wraps another schema.
   public static function wrap<E, A>(fieldName: String, valueSchema: Schema<E, A>): Schema<E, A>

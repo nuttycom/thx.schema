@@ -116,8 +116,10 @@ class SchemaDynamicExtensions {
             _.toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
-        case Optional(fieldName, valueSchema, _):
-          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _));
+        case Optional(fieldName, valueSchema, _, dflt):
+          parseOptionalProperty(v, fieldName, parse0.bind(path / fieldName, valueSchema, err, _)).map(
+            function(result) return result.orElse(dflt)
+          );
       };
 
       return parsedOpt.ap(parseObject(path, k, err, v), Nel.semigroup());
@@ -214,8 +216,8 @@ class SchemaDynamicExtensions {
         Writer.tell([ field => renderDynamic(valueSchema, i0) ], wm) >>
         Writer.pure(i0, wm);
 
-      case Optional(field, valueSchema, accessor):
-        var i0 = accessor(value);
+      case Optional(field, valueSchema, accessor, dflt):
+        var i0 = accessor(value).orElse(dflt);
         Writer.tell(i0.cata(new Map(), function(v0) return [ field => renderDynamic(valueSchema, v0) ]), wm) >>
         Writer.pure(i0, wm);
     }
