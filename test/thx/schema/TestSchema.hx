@@ -7,7 +7,7 @@ import utest.Assert;
 
 import thx.schema.SimpleSchema;
 import thx.schema.SimpleSchema.*;
-import thx.schema.SchemaFDSL.*;
+import thx.schema.SchemaDSL.*;
 
 using thx.schema.SchemaFExtensions;
 using thx.schema.SchemaDynamicExtensions;

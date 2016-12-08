@@ -10,7 +10,7 @@ import thx.fp.Functions.const;
 import thx.schema.SchemaF;
 using thx.schema.SchemaFExtensions;
 
-class SchemaFDSL {
+class SchemaDSL {
   //
   // Constructors for oneOf alternatives
   //
