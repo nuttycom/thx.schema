@@ -29,11 +29,11 @@ import thx.schema.SimpleSchema.*;
 using thx.schema.SchemaFExtensions;
 
 class SchemaDynamicExtensions {
-  public static function parse<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  public static function parseDynamic<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     return parse0(SPath.root, schema.schema, err, v);
   }
 
-  public static function parser<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
+  public static function dparser<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
     return parse0.bind(SPath.root, schema.schema, err, _);
   }
 

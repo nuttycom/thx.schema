@@ -110,7 +110,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], Some(new TSimple(3)))),
-      TComplex.schema().parse(serr, obj)
+      TComplex.schema().parseDynamic(serr, obj)
     );
   }
 
@@ -119,35 +119,35 @@ class TestSchema {
 
     Assert.same(
       Right(new TComplex(1, 2.0, false, [new TSimple(3), new TSimple(4)], None)),
-      TComplex.schema().parse(serr, obj)
+      TComplex.schema().parseDynamic(serr, obj)
     );
   }
 
   public function testParseInt() {
-    Assert.same(Right(1), int().parse(serr, 1));
-    Assert.same(Right(1), int().parse(serr, "1"));
-    Assert.isTrue(int().parse(serr, 2.1).either.isLeft());
-    Assert.isTrue(int().parse(serr, "xadf").either.isLeft());
+    Assert.same(Right(1), int().parseDynamic(serr, 1));
+    Assert.same(Right(1), int().parseDynamic(serr, "1"));
+    Assert.isTrue(int().parseDynamic(serr, 2.1).either.isLeft());
+    Assert.isTrue(int().parseDynamic(serr, "xadf").either.isLeft());
   }
 
   public function testParseFloat() {
-    Assert.same(Right(1), float().parse(serr, 1));
-    Assert.same(Right(1.5), float().parse(serr, 1.5));
-    Assert.same(Right(1.5), float().parse(serr, "1.5"));
-    Assert.isTrue(float().parse(serr, "xadf").either.isLeft());
+    Assert.same(Right(1), float().parseDynamic(serr, 1));
+    Assert.same(Right(1.5), float().parseDynamic(serr, 1.5));
+    Assert.same(Right(1.5), float().parseDynamic(serr, "1.5"));
+    Assert.isTrue(float().parseDynamic(serr, "xadf").either.isLeft());
   }
 
   public function testParseBool() {
-    Assert.same(Right(true), bool().parse(serr, true));
-    Assert.same(Right(true), bool().parse(serr, "true"));
-    Assert.isTrue(bool().parse(serr, "xadf").either.isLeft());
+    Assert.same(Right(true), bool().parseDynamic(serr, true));
+    Assert.same(Right(true), bool().parseDynamic(serr, "true"));
+    Assert.isTrue(bool().parseDynamic(serr, "xadf").either.isLeft());
   }
 
   public function testParseString() {
-    Assert.same(Right("asdf"), string().parse(serr, "asdf"));
-    Assert.isTrue(string().parse(serr, 1).either.isLeft());
-    Assert.isTrue(string().parse(serr, 1.0).either.isLeft());
-    Assert.isTrue(string().parse(serr, true).either.isLeft());
+    Assert.same(Right("asdf"), string().parseDynamic(serr, "asdf"));
+    Assert.isTrue(string().parseDynamic(serr, 1).either.isLeft());
+    Assert.isTrue(string().parseDynamic(serr, 1.0).either.isLeft());
+    Assert.isTrue(string().parseDynamic(serr, true).either.isLeft());
   }
 
   public function testParseEnum() {
@@ -155,9 +155,9 @@ class TestSchema {
     var y = { ey: { s: "hi", i: 1 } };
     var z = { ez: null };
 
-    Assert.same(Right(EX(new TSimple(3))), TEnums.schema().parse(serr, x));
-    Assert.same(Right(EY("hi", 1)), TEnums.schema().parse(serr, y));
-    Assert.same(Right(EZ), TEnums.schema().parse(serr, z));
+    Assert.same(Right(EX(new TSimple(3))), TEnums.schema().parseDynamic(serr, x));
+    Assert.same(Right(EY("hi", 1)), TEnums.schema().parseDynamic(serr, y));
+    Assert.same(Right(EZ), TEnums.schema().parseDynamic(serr, z));
   }
 
   public function testParseRec() {
@@ -165,7 +165,7 @@ class TestSchema {
 
     Assert.same(
       Right(new TRec(1, [new TRec(2, [new TRec(3, [])])])),
-      TRec.schema().parse(serr, obj)
+      TRec.schema().parseDynamic(serr, obj)
     );
   }
 
@@ -176,13 +176,13 @@ class TestSchema {
       makeAlt("c", C, { b: bool().schema, f: float().schema }),
       makeAlt("d", D, { s: string().schema, b: bool().schema, f: makeOptional(float()).schema })
     ]);
-    Assert.isTrue(schema.parse(serr, "b").either.isLeft());
+    Assert.isTrue(schema.parseDynamic(serr, "b").either.isLeft());
     var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
       Assert.same(
         Right(test),
-        schema.parse(serr, v),
+        schema.parseDynamic(serr, v),
         'failed with $v'
       );
     }
@@ -192,13 +192,13 @@ class TestSchema {
     var schema = oneOf([
       makeAlt("b", B, int().schema)
     ]);
-    Assert.isTrue(schema.parse(serr, "b").either.isLeft());
+    Assert.isTrue(schema.parseDynamic(serr, "b").either.isLeft());
     var tests = [B(1)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
       Assert.same(
         Right(test),
-        schema.parse(serr, v),
+        schema.parseDynamic(serr, v),
         'failed with $v'
       );
     }

@@ -20,7 +20,7 @@ class TestSchemaDynamicExtensions {
   public function testRenderDynamic() {
     var ex: TEnum = EX(new TSimple(3));
     var rendered = TEnums.schema().renderDynamic(ex);
-    var parsed = TEnums.schema().parse(function(s: String) return s, rendered);
+    var parsed = TEnums.schema().parseDynamic(function(s: String) return s, rendered);
     Assert.same(Right(ex), parsed);
   }
 }
