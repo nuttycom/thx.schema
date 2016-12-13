@@ -35,7 +35,7 @@ class SchemaDSLM {
     return macro thx.schema.SchemaDSL.alt($id, thx.schema.SchemaDSL.liftS($sub), $constr, $f);
   }
 
-  public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: ExprOf<Dynamic<thx.schema.SchemaF<E, X, Dynamic>>>) {
+  public static function make<E, X>(id: ExprOf<String>, constr: Expr, extr: Expr, obj: Expr) {
     var valueType = getValueType(constr);
     var fields = getFields(obj);
     var objectType = getObjectType(fields);
@@ -69,11 +69,7 @@ class SchemaDSLM {
       Context.error('function constr should have at least one argument', Context.currentPos());
     }
     return fieldData.map(function(field) {
-      var t = switch Context.typeof(field.expr) {
-        case TEnum(_, [_, _, type]): type; // TODO make the match stricter
-        case TFun(_, TEnum(_, [_, _, type])): type;
-        case _: Context.error('invalid schema type for `{$field.field}` [found ${field.expr}]', Context.currentPos());
-      }
+      var t = getFieldType(field);
       return {
         type: t,
         ctype: TypeTools.toComplexType(t),
@@ -82,6 +78,23 @@ class SchemaDSLM {
         pos: field.expr.pos
       };
     });
+  }
+
+  static function getFieldType(field) {
+    return resolveExprType(field.expr, field.expr.pos);
+  }
+
+  static function resolveExprType(expr, pos) {
+    return switch Context.typeof(expr) {
+      case TEnum(_, [_, _, type]):
+        type; // TODO make the match stricter
+      case TFun(_, TEnum(_, [_, _, type])):
+        type;
+      case TType(type, params):
+        type.get().type;
+      case t:
+        Context.error('invalid schema type for ${expr} with type $t', pos);
+    };
   }
 
   static function getValueType(e: Expr) {

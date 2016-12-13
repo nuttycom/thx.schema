@@ -80,7 +80,7 @@ typedef EYO = {s: String, i: Int}
 class TEnums {
   public static function schema<E>(): Schema<E, TEnum> return oneOf([
     alt("ex", TSimple.schema(), function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
-    alt("ey", 
+    alt("ey",
       object(
         ap2(
           function(s: String, i: Int) return { s: s, i: i },
@@ -88,7 +88,7 @@ class TEnums {
           required("i", int(), function(o: EYO) return o.i)
         )
       ),
-      function(o: EYO) return EY(o.s, o.i), 
+      function(o: EYO) return EY(o.s, o.i),
       function(e: TEnum) return switch e { case EY(s, i): Some({s: s, i: i}); case _: None; }
     ),
     alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
@@ -171,9 +171,9 @@ class TestSchema {
   public function testEnum() {
     var schema: Schema<String, TEnumMulti> = oneOf([
       makeAlt("a", A),
-      makeAlt("b", B, { i: int() }),
-      makeAlt("c", C, { b: bool(), f: float() }),
-      makeAlt("d", D, { s: string(), b: bool(), f: makeOptional(float()) })
+      makeAlt("b", B, { i: int().schema }),
+      makeAlt("c", C, { b: bool().schema, f: float().schema }),
+      makeAlt("d", D, { s: string().schema, b: bool().schema, f: makeOptional(float()).schema })
     ]);
     Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [A, B(1), C(false, 0.1), D("x", true, Some(3.1415)), D("x", true, None)];
@@ -189,7 +189,7 @@ class TestSchema {
 
   public function testEnumOneArgument() {
     var schema = oneOf([
-      makeAlt("b", B, int())
+      makeAlt("b", B, int().schema)
     ]);
     Assert.isTrue(schema.parse(serr, "b").either.isLeft());
     var tests = [B(1)];
