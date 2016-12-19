@@ -16,11 +16,6 @@ import thx.schema.SchemaF;
  * to be imported via 'using'.
  */
 class SchemaFExtensions {
-  public static function id<E, X, A>(a: Alternative<E, X, A>)
-    return switch a {
-      case Prism(id, _, _, _): id;
-    };
-
   public static function stype<E, X, A>(schema: SchemaF<E, X, A>): SType
     return switch schema {
       case BoolSchema:  BoolSType;
@@ -147,23 +142,27 @@ class PropSchemaExtensions {
 }
 
 class AlternativeExtensions {
-  public static function id<E, X, A>(alt: Alternative<E, X, A>): String
+  public static function id<E, X, A>(alt: Alternative<E, X, A>): Option<String>
     return switch alt {
-      case Prism(id, _, _, _): id;
+      case Ident(id, _, _, _): Some(id);
+      case Match(_, _, _): None;
     };
 
   public static function isConstantAlt<E, X, A>(alt: Alternative<E, X, A>): Bool
     return switch alt {
-      case Prism(_, s, _, _): SchemaFExtensions.isConstant(s.schema);
+      case Ident(_, s, _, _): SchemaFExtensions.isConstant(s.schema);
+      case Match(s, _, _): SchemaFExtensions.isConstant(s.schema);
     };
 
   public static function mapAnnotation<E, X, Y, A>(alt: Alternative<E, X, A>, f: X -> Y): Alternative<E, Y, A> 
     return switch alt {
-      case Prism(id, s, p, q): Prism(id, s.mapAnnotation(f), p, q);
+      case Ident(id, s, p, q): Ident(id, s.mapAnnotation(f), p, q);
+      case Match(s, p, q): Ident(s.mapAnnotation(f), p, q);
     };
 
   public static function mapError<E, F, X, A>(alt: Alternative<E, X, A>, e: E -> F): Alternative<F, X, A> 
     return switch alt {
-      case Prism(id, s, f, g): Prism(id, s.mapError(e), f, g);
+      case Ident(id, s, f, g): Ident(id, s.mapError(e), f, g);
+      case Match(s, f, g): Match(s.mapError(e), f, g);
     };
 }

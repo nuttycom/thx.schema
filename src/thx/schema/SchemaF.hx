@@ -66,7 +66,8 @@ enum ParseResult<E, S, A> {
 }
 
 enum Alternative<E, X, A> {
-  Prism<A, B>(id: String, base: AnnotatedSchema<E, X, B>, f: B -> A, g: A -> Option<B>): Alternative<E, X, A>;
+  Ident<A, B>(id: String, base: AnnotatedSchema<E, X, B>, f: B -> A, g: A -> Option<B>): Alternative<E, X, A>;
+  Match<A, B>(base: AnnotatedSchema<E, X, B>, f: B -> A, g: A -> Option<B>); 
 }
 
 enum PropSchema<E, X, O, A> {
