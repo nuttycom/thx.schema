@@ -107,6 +107,9 @@ class ObjectSchemaExtensions {
       case Ap(s, k): Ap(s, map(k, f.compose));
     };
 
+  public static function dimap<E, X, N, O, A, B>(o: PropsBuilder<E, X, O, A>, f: N -> O, g: A -> B): PropsBuilder<E, X, N, B>
+    return map(contramap(o, f), g);
+
   public static function ap<E, X, O, A, B>(o: PropsBuilder<E, X, O, A>, f: PropsBuilder<E, X, O, A -> B>): PropsBuilder<E, X, O, B>
     return switch f {
       case Pure(g): map(o, g);
@@ -167,3 +170,4 @@ class AlternativeExtensions {
       case Prism(id, s, f, g): Prism(id, s.mapError(e), f, g);
     };
 }
+
