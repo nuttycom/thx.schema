@@ -33,11 +33,15 @@ class SchemaDynamicExtensions {
     return parseDynamic0(schema.schema, SPath.root, err, v);
   }
 
-  public static function dparser<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
-    return parseDynamic0.bind(schema.schema, SPath.root, err, _);
+  public static function parseDynamicAt<E, X, A>(schema: AnnotatedSchema<E, X, A>, path: SPath, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+    return parseDynamic0(schema.schema, path, err, v);
   }
 
-  public static function parseDynamic0<E, X, A>(schemaf: SchemaF<E, X, A>, path: SPath, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  public static function dparser<E, X, A>(schema: AnnotatedSchema<E, X, A>, err: String -> E): Dynamic -> VNel<ParseError<E>, A> {
+    return parseDynamicAt.bind(schema, SPath.root, err, _);
+  }
+
+  static function parseDynamic0<E, X, A>(schemaf: SchemaF<E, X, A>, path: SPath, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     function failure(s: String) return new ParseError(err(s), path);
     function failNel(s: String) return failureNel(new ParseError(err(s), path));
 
@@ -50,8 +54,8 @@ class SchemaDynamicExtensions {
       case ConstSchema(a):  successNel(a);
 
       case ObjectSchema(propSchema): parseObject(path, propSchema, err, v);
-      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parseDynamic0(elemSchema.schema, path * i, err, x), failure);
-      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parseDynamic0(elemSchema.schema, path / s, err, x), failure);
+      case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parseDynamicAt(elemSchema, path * i, err, x), failure);
+      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parseDynamicAt(elemSchema, path / s, err, x), failure);
 
       case OneOfSchema(alternatives):
         if (alternatives.all.fn(_.isConstantAlt())) {
@@ -62,7 +66,7 @@ class SchemaDynamicExtensions {
             function(s: String) {
               var id0 = s.toLowerCase();
               return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
-                case Some(Prism(id, altSchema, f, _)): parseDynamic0(altSchema.schema, path / id, err, v).map(f);
+                case Some(Prism(id, altSchema, f, _)): parseDynamicAt(altSchema, path / id, err, v).map(f);
                 case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
             }
@@ -76,7 +80,7 @@ class SchemaDynamicExtensions {
 
           switch alts {
             case [Prism(id, base, f, _)]:
-              var baseParser = parseDynamic0.bind(base.schema, path / id, err, _);
+              var baseParser = parseDynamicAt.bind(base, path / id, err, _);
               var res = if (base.schema.isConstant()) parseNullableProperty(v, id, baseParser)
                         else parseProperty(v, id, baseParser, function(s: String) return new ParseError(err(s), path));
 
@@ -112,12 +116,12 @@ class SchemaDynamicExtensions {
     inline function go<I>(ps: PropSchema<E, X, O, I>, k: PropsBuilder<E, X, O, I -> A>): VNel<ParseError<E>, A> {
       var parsedOpt: VNel<ParseError<E>, I> = switch ps {
         case Required(fieldName, valueSchema, _, dflt):
-          parseOptionalProperty(v, fieldName, parseDynamic0.bind(valueSchema.schema, path / fieldName, err, _)).flatMapV.fn(
+          parseOptionalProperty(v, fieldName, parseDynamicAt.bind(valueSchema, path / fieldName, err, _)).flatMapV.fn(
             _.orElse(dflt).toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
         case Optional(fieldName, valueSchema, _):
-          parseOptionalProperty(v, fieldName, parseDynamic0.bind(valueSchema.schema, path / fieldName, err, _));
+          parseOptionalProperty(v, fieldName, parseDynamicAt.bind(valueSchema, path / fieldName, err, _));
       };
 
       return parsedOpt.ap(parseObject(path, k, err, v), Nel.semigroup());
