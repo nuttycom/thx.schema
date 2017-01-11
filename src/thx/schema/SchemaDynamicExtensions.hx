@@ -37,7 +37,7 @@ class SchemaDynamicExtensions {
     return parse0.bind(SPath.root, schema.schema, err, _);
   }
 
-  private static function parse0<E, X, A>(path: SPath, schemaf: SchemaF<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
+  public static function parse0<E, X, A>(path: SPath, schemaf: SchemaF<E, X, A>, err: String -> E, v: Dynamic): VNel<ParseError<E>, A> {
     function failure(s: String) return new ParseError(err(s), path);
     function failNel(s: String) return failureNel(new ParseError(err(s), path));
 
