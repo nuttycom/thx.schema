@@ -45,14 +45,6 @@ class SchemaFExtensions {
       case _: false;
     };
 
-  public static function hasStringRepr<E, X, A>(schema: SchemaF<E, X, A>): Bool
-    return switch schema {
-      case StrSchema: true;
-      case ParseSchema(s0, _, _): hasStringRepr(s0);
-      case LazySchema(fs): hasStringRepr(fs());
-      case _: false;
-    }
-
   public static function mapAnnotation<E, X, Y, A>(schema: SchemaF<E, X, A>, f: X -> Y): SchemaF<E, Y, A> {
     return switch schema {
       case BoolSchema:  BoolSchema;
@@ -177,30 +169,5 @@ class AlternativeExtensions {
     return switch alt {
       case Prism(id, s, f, g): Prism(id, s.mapError(e), f, g);
     };
-
-  public static function hasStringRepr<E, X, A>(xs: Array<Alternative<E, X, A>>): Bool {
-    // there is a singular string representation for an array of alternatives if
-    // (1) all, or all but one of the alternatives is constant
-    // (2) the one alternative that is not a constant value has
-    //     a representation tht is representable by a string.
-    var constCount = xs.map(isConstantAlt).filter(identity).length;
-    return 
-      (constCount >= xs.length - 1) && 
-      xs.findOption(function(a) return !isConstantAlt(a)).all(
-        function(alt: Alternative<E, X, A>) return switch alt {
-          case Prism(_, s, _, _): SchemaFExtensions.hasStringRepr(s.schema);
-        }
-      );
-  }
-
-  // WARNING: this should be guarded by 'hasStringRepr' to ensure that there is only
-  // a singular alternative which parses to a string
-  public static function findAlt<E, X, A>(xs: Array<Alternative<E, X, A>>, idOrValue: String): Option<Alternative<E, X, A>> {
-    return xs.findOption(
-      function(alt: Alternative<E, X, A>) return switch alt {
-        case Prism(id, s, _, _): id.toLowerCase() == idOrValue || SchemaFExtensions.hasStringRepr(s.schema);
-      }
-    );
-  }
 }
 
