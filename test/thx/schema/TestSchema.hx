@@ -203,6 +203,28 @@ class TestSchema {
       );
     }
   }
+
+  public function testEnumStringRepr() {
+    var schema = oneOf([
+      alt("sa", constant(SA), function(s) return SA, function(e: TEnumStringRepr) return switch e { case SA: Some(null); case _: None; }),
+      alt("sb", constant(SB), function(s) return SB, function(e: TEnumStringRepr) return switch e { case SB: Some(null); case _: None; }),
+      alt("str", string(), StringRepr, function(e: TEnumStringRepr) return switch e { case StringRepr(s): Some(s); case _: None; })
+    ]);
+
+    Assert.same(Right(StringRepr("hello")), schema.parseDynamic(serr, "hello"));
+    Assert.same(Right(SA), schema.parseDynamic(serr, "sa"));
+    Assert.same(Right(SB), schema.parseDynamic(serr, "sb"));
+
+    Assert.same("hello", schema.renderDynamic(StringRepr("hello")));
+    Assert.same("sa", schema.renderDynamic(SA));
+    Assert.same("sb", schema.renderDynamic(SB));
+  }
+}
+
+enum TEnumStringRepr {
+  SA;
+  SB;
+  StringRepr(s: String);
 }
 
 enum TEnumMulti {

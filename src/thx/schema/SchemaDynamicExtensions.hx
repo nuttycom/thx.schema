@@ -58,14 +58,13 @@ class SchemaDynamicExtensions {
       case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parseDynamicAt(elemSchema, path / s, err, x), failure);
 
       case OneOfSchema(alternatives):
-        if (alternatives.all.fn(_.isConstantAlt())) {
+        if (alternatives.hasStringRepr()) {
           // all of the alternatives are constant-valued, so there is no need to encode
           // on any data and we can use the identifier as a bare encoding rather
           // than an object key.
           parseString(v).leftMapNel(failure).flatMapV(
             function(s: String) {
-              var id0 = s.toLowerCase();
-              return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
+              return switch alternatives.findAlt(s.toLowerCase()) {
                 case Some(Prism(id, altSchema, f, _)): parseDynamicAt(altSchema, path / id, err, v).map(f);
                 case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
@@ -160,20 +159,24 @@ class SchemaDynamicExtensions {
         value.mapValues(renderDynamic.bind(elemSchema, _), new Map());
 
       case OneOfSchema(alternatives):
-        var selected: Array<Map<String, Dynamic>> = alternatives.flatMap(
-          function(alt) return switch alt {
-            case Prism(id, base, _, g): g(value).map(function(b) return [ id => renderDynamic(base, b) ]).toArray();
-          }
-        );
+        var selected: Array<Dynamic> = if (alternatives.hasStringRepr()) {
+          alternatives.filterMap(
+            function(alt) return switch alt {
+              case Prism(id, base, _, g): 
+                g(value).map(function(b) return if (base.schema.isConstant()) id else renderDynamic(base, b));
+            }
+          );
+        } else {
+          alternatives.filterMap(
+            function(alt) return switch alt {
+              case Prism(id, base, _, g): 
+                g(value).map(function(b) return [ id => renderDynamic(base, b) ]);
+            }
+          ).map.fn(_.toObject());
+        }
 
         switch selected {
-          case [m]: 
-            if (alternatives.all.fn(_.isConstantAlt())) {
-              m.keys().first(); // just return the key, the value will be unit
-            } else {
-              m.toObject();
-            }
-
+          case [rendered]: rendered;
           case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schemaf.stype()}');
           case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schemaf.stype()}.');
         }
