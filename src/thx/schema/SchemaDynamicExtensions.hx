@@ -8,6 +8,7 @@ import thx.Objects;
 import thx.Nel;
 import thx.Strings;
 import thx.Types;
+import thx.Tuple;
 import thx.Unit;
 import thx.Validation;
 import thx.Validation.*;
@@ -160,22 +161,18 @@ class SchemaDynamicExtensions {
         value.mapValues(renderDynamic.bind(elemSchema, _), new Map());
 
       case OneOfSchema(alternatives):
-        var selected: Array<Map<String, Dynamic>> = alternatives.flatMap(
+        var useConstantSchema = alternatives.all.fn(_.isConstantAlt());
+        var selected: Array<Tuple<String, Dynamic>> = alternatives.filterMap(
           function(alt) return switch alt {
-            case Prism(id, base, _, g): g(value).map(function(b) return [ id => renderDynamic(base, b) ]).toArray();
+            case Prism(id, base, _, g): 
+              g(value).map(function(b) return Tuple2.of(id, if (useConstantSchema) id else [id => renderDynamic(base, b)].toObject()));
           }
         );
 
         switch selected {
-          case [m]: 
-            if (alternatives.all.fn(_.isConstantAlt())) {
-              m.keys().first(); // just return the key, the value will be unit
-            } else {
-              m.toObject();
-            }
-
+          case [m]: m._1;
           case []: throw new thx.Error('None of ${alternatives.map.fn(_.id())} could convert the value $value to the base type ${schemaf.stype()}');
-          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.flatMap.fn(_.keys().toArray())}) claim to render to ${schemaf.stype()}.');
+          case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.map.fn(_._1)}) claim to render to ${schemaf.stype()}.');
         }
 
       case ParseSchema(base, _, g): 
