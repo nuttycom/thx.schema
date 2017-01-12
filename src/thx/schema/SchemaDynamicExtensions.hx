@@ -159,21 +159,18 @@ class SchemaDynamicExtensions {
         value.mapValues(renderDynamic.bind(elemSchema, _), new Map());
 
       case OneOfSchema(alternatives):
-        var selected: Array<Dynamic> = if (alternatives.hasStringRepr()) {
-          alternatives.filterMap(
-            function(alt) return switch alt {
-              case Prism(id, base, _, g): 
-                g(value).map(function(b) return if (base.schema.isConstant()) id else renderDynamic(base, b));
-            }
-          );
-        } else {
-          alternatives.filterMap(
-            function(alt) return switch alt {
-              case Prism(id, base, _, g): 
-                g(value).map(function(b) return [ id => renderDynamic(base, b) ]);
-            }
-          ).map.fn(_.toObject());
-        }
+        var selected: Array<Dynamic> = alternatives.filterMap(
+          function(alt) return switch alt {
+            case Prism(id, base, _, g): 
+              g(value).map(
+                function(b) return if (alternatives.hasStringRepr()) {
+                  if (base.schema.isConstant()) id else renderDynamic(base, b);
+                } else {
+                  [id => renderDynamic(base, b)].toObject();
+                }
+              );
+          }
+        );
 
         switch selected {
           case [rendered]: rendered;
