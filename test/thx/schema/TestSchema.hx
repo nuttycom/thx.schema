@@ -206,8 +206,8 @@ class TestSchema {
 
   public function testEnumStringRepr() {
     var schema = oneOf([
-      alt("sa", constant(SA), function(s) return SA, function(e: TEnumStringRepr) return switch e { case SA: Some(null); case _: None; }),
-      alt("sb", constant(SB), function(s) return SB, function(e: TEnumStringRepr) return switch e { case SB: Some(null); case _: None; }),
+      alt("sa", constant(SA), function(s) return SA, function(e: TEnumStringRepr) return switch e { case SA: Some(SA); case _: None; }),
+      alt("sb", constant(SB), function(s) return SB, function(e: TEnumStringRepr) return switch e { case SB: Some(SB); case _: None; }),
       alt("str", string(), StringRepr, function(e: TEnumStringRepr) return switch e { case StringRepr(s): Some(s); case _: None; })
     ]);
 
