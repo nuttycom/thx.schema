@@ -90,4 +90,31 @@ class SchemaDSL {
       v1: PropsBuilder<E, X, O, A>, v2: PropsBuilder<E, X, O, B>, v3: PropsBuilder<E, X, O, C>, v4: PropsBuilder<E, X, O, D>, v5: PropsBuilder<E, X, O, F>,
       v6: PropsBuilder<E, X, O, G>, v7: PropsBuilder<E, X, O, H>, v8: PropsBuilder<E, X, O, I>, v9: PropsBuilder<E, X, O, J>): PropsBuilder<E, X, O, K>
     return v9.ap(ap8(Functions9.curry(f), v1, v2, v3, v4, v5, v6, v7, v8));
+
+  inline static public function ap10<E, X, O, A, B, C, D, F, G, H, I, J, K, L>(
+      f: A -> B -> C -> D -> F -> G -> H -> I -> J -> K -> L,
+      v1: PropsBuilder<E, X, O, A>, v2: PropsBuilder<E, X, O, B>, v3: PropsBuilder<E, X, O, C>, v4: PropsBuilder<E, X, O, D>, v5: PropsBuilder<E, X, O, F>,
+      v6: PropsBuilder<E, X, O, G>, v7: PropsBuilder<E, X, O, H>, v8: PropsBuilder<E, X, O, I>, v9: PropsBuilder<E, X, O, J>, v10: PropsBuilder<E, X, O, K>): PropsBuilder<E, X, O, L>
+    return v10.ap(ap9(Functions10.curry(f), v1, v2, v3, v4, v5, v6, v7, v8, v9));
+
+  inline static public function ap11<E, X, O, A, B, C, D, F, G, H, I, J, K, L, M>(
+      f: A -> B -> C -> D -> F -> G -> H -> I -> J -> K -> L -> M,
+      v1: PropsBuilder<E, X, O, A>, v2: PropsBuilder<E, X, O, B>, v3: PropsBuilder<E, X, O, C>, v4: PropsBuilder<E, X, O, D>, v5: PropsBuilder<E, X, O, F>,
+      v6: PropsBuilder<E, X, O, G>, v7: PropsBuilder<E, X, O, H>, v8: PropsBuilder<E, X, O, I>, v9: PropsBuilder<E, X, O, J>, v10: PropsBuilder<E, X, O, K>,
+      v11: PropsBuilder<E, X, O, L>): PropsBuilder<E, X, O, M>
+    return v11.ap(ap10(Functions11.curry(f), v1, v2, v3, v4, v5, v6, v7, v8, v9, v10));
+
+  inline static public function ap12<E, X, O, A, B, C, D, F, G, H, I, J, K, L, M, N>(
+      f: A -> B -> C -> D -> F -> G -> H -> I -> J -> K -> L -> M -> N,
+      v1: PropsBuilder<E, X, O, A>, v2: PropsBuilder<E, X, O, B>, v3: PropsBuilder<E, X, O, C>, v4: PropsBuilder<E, X, O, D>, v5: PropsBuilder<E, X, O, F>,
+      v6: PropsBuilder<E, X, O, G>, v7: PropsBuilder<E, X, O, H>, v8: PropsBuilder<E, X, O, I>, v9: PropsBuilder<E, X, O, J>, v10: PropsBuilder<E, X, O, K>,
+      v11: PropsBuilder<E, X, O, L>, v12: PropsBuilder<E, X, O, M>): PropsBuilder<E, X, O, N>
+    return v12.ap(ap11(Functions12.curry(f), v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11));
+
+  inline static public function ap13<E, X, O, A, B, C, D, F, G, H, I, J, K, L, M, N, P>(
+      f: A -> B -> C -> D -> F -> G -> H -> I -> J -> K -> L -> M -> N -> P,
+      v1: PropsBuilder<E, X, O, A>, v2: PropsBuilder<E, X, O, B>, v3: PropsBuilder<E, X, O, C>, v4: PropsBuilder<E, X, O, D>, v5: PropsBuilder<E, X, O, F>,
+      v6: PropsBuilder<E, X, O, G>, v7: PropsBuilder<E, X, O, H>, v8: PropsBuilder<E, X, O, I>, v9: PropsBuilder<E, X, O, J>, v10: PropsBuilder<E, X, O, K>,
+      v11: PropsBuilder<E, X, O, L>, v12: PropsBuilder<E, X, O, M>, v13: PropsBuilder<E, X, O, N>): PropsBuilder<E, X, O, P>
+    return v13.ap(ap12(Functions13.curry(f), v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12));
 }
