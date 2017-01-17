@@ -99,7 +99,7 @@ class SchemaDynamicExtensions {
           failNel('$v is not an anonymous object structure, as required for the representation of values of "oneOf" type.');
         };
 
-      case ParseSchema(base, f, _): 
+      case ParseSchema(base, f, _):
         parseDynamic0(base, path, err, v).flatMapV(
           function(a) return switch f(a) {
             case PSuccess(result): successNel(result);
@@ -107,7 +107,7 @@ class SchemaDynamicExtensions {
           }
         );
 
-      case LazySchema(base): 
+      case LazySchema(base):
         parseDynamic0(base(), path, err, v);
     };
   }
@@ -149,12 +149,12 @@ class SchemaDynamicExtensions {
       case StrSchema:   value;
       case BoolSchema:  value;
       case AnySchema:   value;
-      case ConstSchema(v):  v;
+      case ConstSchema(v): {};
 
       case ObjectSchema(propSchema):
         renderDynObject(propSchema, value);
 
-      case ArraySchema(elemSchema):  
+      case ArraySchema(elemSchema):
         value.map(renderDynamic.bind(elemSchema, _));
 
       case MapSchema(elemSchema):
@@ -164,7 +164,7 @@ class SchemaDynamicExtensions {
         var useConstantSchema = alternatives.all.fn(_.isConstantAlt());
         var selected: Array<Tuple<String, Dynamic>> = alternatives.filterMap(
           function(alt) return switch alt {
-            case Prism(id, base, _, g): 
+            case Prism(id, base, _, g):
               g(value).map(function(b) return Tuple2.of(id, if (useConstantSchema) id else [id => renderDynamic(base, b)].toObject()));
           }
         );
@@ -175,10 +175,10 @@ class SchemaDynamicExtensions {
           case xs: throw new thx.Error('Ambiguous value $value: multiple alternatives (all of ${xs.map.fn(_._1)}) claim to render to ${schemaf.stype()}.');
         }
 
-      case ParseSchema(base, _, g): 
+      case ParseSchema(base, _, g):
         renderDynamic0(base, g(value));
 
-      case LazySchema(base): 
+      case LazySchema(base):
         renderDynamic0(base(), value);
     }
   }
