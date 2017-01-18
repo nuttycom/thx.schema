@@ -81,7 +81,7 @@ typedef EYO = {s: String, i: Int}
 class TEnums {
   public static function schema<E>(): Schema<E, TEnum> return oneOf([
     alt("ex", TSimple.schema(), function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
-    alt("ey", 
+    alt("ey",
       object(
         ap2(
           function(s: String, i: Int) return { s: s, i: i },
@@ -89,7 +89,7 @@ class TEnums {
           required("i", int(), function(o: EYO) return o.i)
         )
       ),
-      function(o: EYO) return EY(o.s, o.i), 
+      function(o: EYO) return EY(o.s, o.i),
       function(e: TEnum) return switch e { case EY(s, i): Some({s: s, i: i}); case _: None; }
     ),
     alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
