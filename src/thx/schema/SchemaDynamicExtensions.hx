@@ -158,8 +158,10 @@ class SchemaDynamicExtensions {
         value.map(renderDynamic.bind(elemSchema, _));
 
       case MapSchema(elemSchema):
-        value.mapValues(renderDynamic.bind(elemSchema, _), new Map());
-
+        value.tuples().reduce(function(o, t) {
+          Reflect.setField(o, t.left, renderDynamic(elemSchema, t.right));
+          return o;
+        }, {});
       case OneOfSchema(alternatives):
         var useConstantSchema = alternatives.all.fn(_.isConstantAlt());
         var selected: Array<Tuple<String, Dynamic>> = alternatives.filterMap(

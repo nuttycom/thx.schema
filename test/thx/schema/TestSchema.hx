@@ -81,7 +81,7 @@ typedef EYO = {s: String, i: Int}
 class TEnums {
   public static function schema<E>(): Schema<E, TEnum> return oneOf([
     alt("ex", TSimple.schema(), function(s) return EX(s), function(e: TEnum) return switch e { case EX(s): Some(s); case _: None; }),
-    alt("ey", 
+    alt("ey",
       object(
         ap2(
           function(s: String, i: Int) return { s: s, i: i },
@@ -89,7 +89,7 @@ class TEnums {
           required("i", int(), function(o: EYO) return o.i)
         )
       ),
-      function(o: EYO) return EY(o.s, o.i), 
+      function(o: EYO) return EY(o.s, o.i),
       function(e: TEnum) return switch e { case EY(s, i): Some({s: s, i: i}); case _: None; }
     ),
     alt("ez", constant(EZ), function(s) return EZ   , function(e: TEnum) return switch e { case EZ:    Some(null); case _: None; })
@@ -196,6 +196,20 @@ class TestSchema {
     var tests = [B(1)];
     for(test in tests) {
       var v = schema.renderDynamic(test);
+      Assert.same(
+        Right(test),
+        schema.parseDynamic(serr, v),
+        'failed with $v'
+      );
+    }
+  }
+
+  public function testParseMap() {
+    var schema = map(int());
+    var tests = [["a"=>1,"b"=>2], new Map()];
+    for(test in tests) {
+      var v = schema.renderDynamic(test);
+      trace(v);
       Assert.same(
         Right(test),
         schema.parseDynamic(serr, v),
