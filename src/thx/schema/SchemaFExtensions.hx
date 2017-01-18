@@ -81,7 +81,7 @@ class SchemaFExtensions {
 }
 
 class ParseResultExtensions {
-  public static function map<E, S, A, B>(r: ParseResult<E, S, A>, f: A -> B): ParseResult<E, S, B> 
+  public static function map<E, S, A, B>(r: ParseResult<E, S, A>, f: A -> B): ParseResult<E, S, B>
     return switch r {
       case PSuccess(result): PSuccess(f(result));
       case PFailure(error, sourceData): PFailure(error, sourceData);
@@ -160,14 +160,13 @@ class AlternativeExtensions {
       case Prism(_, s, _, _): SchemaFExtensions.isConstant(s.schema);
     };
 
-  public static function mapAnnotation<E, X, Y, A>(alt: Alternative<E, X, A>, f: X -> Y): Alternative<E, Y, A> 
+  public static function mapAnnotation<E, X, Y, A>(alt: Alternative<E, X, A>, f: X -> Y): Alternative<E, Y, A>
     return switch alt {
       case Prism(id, s, p, q): Prism(id, s.mapAnnotation(f), p, q);
     };
 
-  public static function mapError<E, F, X, A>(alt: Alternative<E, X, A>, e: E -> F): Alternative<F, X, A> 
+  public static function mapError<E, F, X, A>(alt: Alternative<E, X, A>, e: E -> F): Alternative<F, X, A>
     return switch alt {
       case Prism(id, s, f, g): Prism(id, s.mapError(e), f, g);
     };
 }
-
