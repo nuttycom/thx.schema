@@ -209,7 +209,6 @@ class TestSchema {
     var tests = [["a"=>1,"b"=>2], new Map()];
     for(test in tests) {
       var v = schema.renderDynamic(test);
-      trace(v);
       Assert.same(
         Right(test),
         schema.parseDynamic(serr, v),

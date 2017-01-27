@@ -41,12 +41,6 @@ class SimpleSchema {
   public static function oneOf<E, A>(alternatives: Array<Alternative<E, Unit, A>>): Schema<E, A>
     return liftS(OneOfSchema(alternatives));
 
-  public static function iso<E, A, B>(base: SchemaF<E, Unit, A>, f: A -> B, g: B -> A): Schema<E, B>
-    return liftS(ParseSchema(base, function(a: A) return PSuccess(f(a)), g));
-
-  public static function parse<E, A, B>(base: SchemaF<E, Unit, A>, f: A -> ParseResult<E, A, B>, g: B -> A): Schema<E, B>
-    return liftS(ParseSchema(base, f, g));
-
   public static function lazy<E, A>(base: Void -> SchemaF<E, Unit, A>): Schema<E, A>
     return liftS(LazySchema(base));
 

@@ -12,6 +12,16 @@ using thx.schema.SchemaFExtensions;
 
 class SchemaDSL {
   //
+  // Constructors for derived schema that are independent of metadata type
+  //
+
+  public static function iso<E, X, A, B>(base: AnnotatedSchema<E, X, A>, f: A -> B, g: B -> A): AnnotatedSchema<E, X, B>
+    return new AnnotatedSchema(base.annotation, ParseSchema(base.schema, function(a: A) return PSuccess(f(a)), g));
+
+  public static function parse<E, X, A, B>(base: AnnotatedSchema<E, X, A>, f: A -> ParseResult<E, A, B>, g: B -> A): AnnotatedSchema<E, X, B>
+    return new AnnotatedSchema(base.annotation, ParseSchema(base.schema, f, g));
+
+  //
   // Constructors for oneOf alternatives
   //
 
