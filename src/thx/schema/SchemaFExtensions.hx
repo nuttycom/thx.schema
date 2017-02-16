@@ -152,21 +152,21 @@ class PropSchemaExtensions {
 class AlternativeExtensions {
   public static function id<E, X, A>(alt: Alternative<E, X, A>): String
     return switch alt {
-      case Prism(id, _, _, _): id;
+      case Prism(id, _, _, _, _): id;
     };
 
   public static function isConstantAlt<E, X, A>(alt: Alternative<E, X, A>): Bool
     return switch alt {
-      case Prism(_, s, _, _): SchemaFExtensions.isConstant(s.schema);
+      case Prism(_, s, _, _, _): SchemaFExtensions.isConstant(s.schema);
     };
 
   public static function mapAnnotation<E, X, Y, A>(alt: Alternative<E, X, A>, f: X -> Y): Alternative<E, Y, A>
     return switch alt {
-      case Prism(id, s, p, q): Prism(id, s.mapAnnotation(f), p, q);
+      case Prism(id, s, x, p, q): Prism(id, s.mapAnnotation(f), f(x), p, q);
     };
 
   public static function mapError<E, F, X, A>(alt: Alternative<E, X, A>, e: E -> F): Alternative<F, X, A>
     return switch alt {
-      case Prism(id, s, f, g): Prism(id, s.mapError(e), f, g);
+      case Prism(id, s, x, f, g): Prism(id, s.mapError(e), x, f, g);
     };
 }

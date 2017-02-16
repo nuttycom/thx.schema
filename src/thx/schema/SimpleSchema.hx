@@ -48,11 +48,14 @@ class SimpleSchema {
   // Constructors for oneOf alternatives
   //
 
+  public static function alt<E, A, B>(id: String, base: AnnotatedSchema<E, Unit, B>, f: B -> A, g: A -> Option<B>): Alternative<E, Unit, A>
+    return Prism(id, base, unit, f, g);
+
   macro public static function makeAlt(id: haxe.macro.Expr.ExprOf<String>, rest: Array<haxe.macro.Expr>)
     return SchemaDSLM.makeVar(id, rest);
 
   public static function constAlt<E, B>(id: String, b: B, equal: B -> B -> Bool): Alternative<E, Unit, B>
-    return Prism(id, constant(b), identity, function(b0) return equal(b, b0).option(b));
+    return Prism(id, constant(b), unit, identity, function(b0) return equal(b, b0).option(b));
 
   public static function constEnum<E, B : EnumValue>(id: String, b: B): Alternative<E, Unit, B>
     return constAlt(id, b, Type.enumEq);

@@ -34,7 +34,7 @@ class SchemaGenExtensions {
       case ConstSchema(a): a;
 
       case OneOfSchema(alternatives): switch alternatives.head() {
-        case Prism(_, base, f, _): f(exemplar(base));
+        case Prism(_, base, x, f, _): f(exemplar(base));
       }
 
       case ParseSchema(base, f, g): switch f(exemplar0(base)) {

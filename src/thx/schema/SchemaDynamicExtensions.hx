@@ -67,7 +67,7 @@ class SchemaDynamicExtensions {
             function(s: String) {
               var id0 = s.toLowerCase();
               return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
-                case Some(Prism(id, altSchema, f, _)): parseDynamicAt(altSchema, path / id, err, v).map(f);
+                case Some(Prism(id, altSchema, _, f, _)): parseDynamicAt(altSchema, path / id, err, v).map(f);
                 case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
             }
@@ -80,7 +80,7 @@ class SchemaDynamicExtensions {
           var alts = fields.flatMap(function(name) return alternatives.filter.fn(_.id() == name));
 
           switch alts {
-            case [Prism(id, base, f, _)]:
+            case [Prism(id, base, _, f, _)]:
               var baseParser = parseDynamicAt.bind(base, path / id, err, _);
               var res = if (base.schema.isConstant()) parseNullableProperty(v, id, baseParser)
                         else parseProperty(v, id, baseParser, function(s: String) return new ParseError(err(s), path));
@@ -166,7 +166,7 @@ class SchemaDynamicExtensions {
         var useConstantSchema = alternatives.all.fn(_.isConstantAlt());
         var selected: Array<Tuple<String, Dynamic>> = alternatives.filterMap(
           function(alt) return switch alt {
-            case Prism(id, base, _, g):
+            case Prism(id, base, _, _, g):
               g(value).map(function(b) return Tuple2.of(id, if (useConstantSchema) id else [id => renderDynamic(base, b)].toObject()));
           }
         );

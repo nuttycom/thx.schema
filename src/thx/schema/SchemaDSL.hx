@@ -22,16 +22,6 @@ class SchemaDSL {
     return new AnnotatedSchema(base.annotation, ParseSchema(base.schema, f, g));
 
   //
-  // Constructors for oneOf alternatives
-  //
-
-  public static function alt<E, X, A, B>(id: String, base: AnnotatedSchema<E, X, B>, f: B -> A, g: A -> Option<B>): Alternative<E, X, A>
-    return Prism(id, base, f, g);
-
-  macro public static function makeAlt(id: haxe.macro.Expr.ExprOf<String>, rest: Array<haxe.macro.Expr>)
-    return SchemaDSLM.makeVar(id, rest);
-
-  //
   // Constructors for object properties.
   //
 
