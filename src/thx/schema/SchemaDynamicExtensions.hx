@@ -92,7 +92,7 @@ class SchemaDynamicExtensions {
                 failNel('Could not match type identifier from among ${alternatives.map.fn(_.id())} in object with fields $fields.');
               } else {
                 // throw here, because this is a programmer error, not a user error.
-                throw new thx.Error('More than one alternative bound to the same schema at path ${path.toString()}!');
+                throw new thx.Error('More than one alternative bound to the same schema at path ${path.render()}!');
               }
           };
         } else {

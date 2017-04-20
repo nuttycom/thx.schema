@@ -10,6 +10,7 @@ class TestAll {
     runner.addCase(new TestSchema());
     runner.addCase(new TestSchemaDynamicExtensions());
     runner.addCase(new TestSchemaGenExtensions());
+    runner.addCase(new TestSchemaSchema());
     Report.create(runner);
     runner.run();
   }

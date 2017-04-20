@@ -92,6 +92,12 @@ class ParseResultExtensions {
       case PSuccess(result): PSuccess(result);
       case PFailure(error, sourceData): PFailure(f(error), sourceData);
     };
+
+  public static function flatMap<E, S, A, B>(r: ParseResult<E, S, A>, f: A -> ParseResult<E, S, B>): ParseResult<E, S, B>
+    return switch r {
+      case PSuccess(result): f(result);
+      case PFailure(error, sourceData): PFailure(error, sourceData);
+    };
 }
 
 class ObjectSchemaExtensions {

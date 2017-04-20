@@ -12,7 +12,7 @@ class ParseError<E> {
   }
 
   public function toString(): String {
-    return '${path.toString()}: ${error}';
+    return '${path.render()}: ${error}';
   }
 }
 
