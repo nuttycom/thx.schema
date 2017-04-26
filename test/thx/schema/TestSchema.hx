@@ -205,7 +205,7 @@ class TestSchema {
   }
 
   public function testParseMap() {
-    var schema = map(int());
+    var schema = dict(int());
     var tests = [["a"=>1,"b"=>2], new Map()];
     for(test in tests) {
       var v = schema.renderDynamic(test);
