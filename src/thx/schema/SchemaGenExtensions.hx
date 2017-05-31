@@ -3,6 +3,7 @@ package thx.schema;
 import thx.Options;
 import thx.Nel;
 import thx.Nothing;
+import thx.Tuple;
 import thx.Validation;
 import thx.Validation.*;
 import thx.fp.Dynamics;
@@ -44,7 +45,7 @@ class SchemaGenExtensions {
 
       case ObjectSchema(propSchema):  objectExemplar(propSchema);
       case ArraySchema(elemSchema):   [exemplar(elemSchema)];
-      case MapSchema(elemSchema):     ["" => exemplar(elemSchema)];
+      case MapSchema(a, elemSchema):  a.map(Tuple2.of.bind(_, exemplar(elemSchema))).toStringMap();
       case LazySchema(delay):         exemplar0(delay());
     }
   } 

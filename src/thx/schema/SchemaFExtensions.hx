@@ -31,7 +31,7 @@ class SchemaFExtensions {
       case ConstSchema(_):  ConstSType;
       case ObjectSchema(propSchema):  ObjectSType;
       case ArraySchema(elemSchema):   ArraySType;
-      case MapSchema(elemSchema):     MapSType;
+      case MapSchema(_, elemSchema):  MapSType;
       case OneOfSchema(alternatives): OneOfSType;
       case ParseSchema(base, f, g): stype(base);
       case LazySchema(base): stype(base()); // could diverge?
@@ -55,7 +55,7 @@ class SchemaFExtensions {
       case ConstSchema(a):  ConstSchema(a);
       case ObjectSchema(propSchema):  ObjectSchema(ObjectSchemaExtensions.mapAnnotation(propSchema, f));
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapAnnotation(f));
-      case MapSchema(elemSchema):     MapSchema(elemSchema.mapAnnotation(f));
+      case MapSchema(a, elemSchema):  MapSchema(a, elemSchema.mapAnnotation(f));
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapAnnotation.bind(_, f)));
       case ParseSchema(base, p, q):   ParseSchema(mapAnnotation(base, f), p, q);
       case LazySchema(base):          LazySchema(function() return mapAnnotation(base(), f));
@@ -72,7 +72,7 @@ class SchemaFExtensions {
       case ConstSchema(a):  ConstSchema(a);
       case ObjectSchema(propSchema):  ObjectSchema(ObjectSchemaExtensions.mapError(propSchema, e));
       case ArraySchema(elemSchema):   ArraySchema(elemSchema.mapError(e));
-      case MapSchema(elemSchema):     MapSchema(elemSchema.mapError(e));
+      case MapSchema(a, elemSchema):  MapSchema(a, elemSchema.mapError(e));
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapError.bind(_, e)));
       case ParseSchema(base, f, g):   ParseSchema(mapError(base, e), function(b) return ParseResultExtensions.mapError(f(b), e), g);
       case LazySchema(base):          LazySchema(function() return mapError(base(), e));

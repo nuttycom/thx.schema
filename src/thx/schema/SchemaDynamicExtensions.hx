@@ -56,7 +56,7 @@ class SchemaDynamicExtensions {
 
       case ObjectSchema(propSchema): parseObject(path, propSchema, err, v);
       case ArraySchema(elemSchema):  parseArrayIndexed(v, function(x, i) return parseDynamicAt(elemSchema, path * i, err, x), failure);
-      case MapSchema(elemSchema):    parseStringMap(v, function(x, s) return parseDynamicAt(elemSchema, path / s, err, x), failure);
+      case MapSchema(_, elemSchema):    parseStringMap(v, function(x, s) return parseDynamicAt(elemSchema, path / s, err, x), failure);
 
       case OneOfSchema(alternatives):
         if (alternatives.all.fn(_.isConstantAlt())) {
@@ -157,7 +157,7 @@ class SchemaDynamicExtensions {
       case ArraySchema(elemSchema):
         value.map(renderDynamic.bind(elemSchema, _));
 
-      case MapSchema(elemSchema):
+      case MapSchema(_, elemSchema):
         value.tuples().reduce(function(o, t) {
           Reflect.setField(o, t.left, renderDynamic(elemSchema, t.right));
           return o;

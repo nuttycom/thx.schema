@@ -28,7 +28,9 @@ enum SchemaF<E, X, A> {
 
   ObjectSchema<B>(propSchema: ObjectBuilder<E, X, B>): SchemaF<E, X, B>;
   ArraySchema<B>(elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Array<B>>;
-  MapSchema<B>(elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Map<String, B>>; // interpret as a String-keyed map instead of an object value
+
+  // interpret a record as a String-keyed map with a uniform value type instead of an object value
+  MapSchema<B>(requiredProperties: Array<String>, elemSchema: AnnotatedSchema<E, X, B>): SchemaF<E, X, Map<String, B>>; 
 
   // schema for sum types
   OneOfSchema<B>(alternatives: Array<Alternative<E, X, B>>): SchemaF<E, X, B>;

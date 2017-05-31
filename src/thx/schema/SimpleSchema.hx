@@ -32,8 +32,8 @@ class SimpleSchema {
   public static function array<E, A>(elemSchema: Schema<E, A>): Schema<E, Array<A>>
     return liftS(ArraySchema(elemSchema));
 
-  public static function dict<E, A>(elemSchema: Schema<E, A>): Schema<E, Map<String, A>>
-    return liftS(MapSchema(elemSchema));
+  public static function dict<E, A>(requiredKeys: Array<String>, elemSchema: Schema<E, A>): Schema<E, Map<String, A>>
+    return liftS(MapSchema(requiredKeys, elemSchema));
 
   public static function object<E, A>(propSchema: ObjectBuilder<E, Unit, A>): Schema<E, A>
     return liftS(ObjectSchema(propSchema));
