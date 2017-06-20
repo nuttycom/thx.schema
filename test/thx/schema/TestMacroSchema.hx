@@ -7,20 +7,16 @@ import thx.schema.SimpleSchema;
 using thx.schema.SchemaDynamicExtensions;
 import thx.Either;
 import thx.Functions.identity;
+import haxe.ds.Option;
 
 class TestMacroSchema {
   public function new() {}
 
   public function testMakeEnumCase1() {
     var schema = makeEnum(Case1)();
-    roundTripSchema(A1, schema);
-    roundTripSchema(B1, schema);
-  }
-
-  public function testMakeEnumCase2() {
-    var schema = makeEnum(Case2)();
-    roundTripSchema(A2, schema);
-    roundTripSchema(B2("b"), schema);
+    roundTripSchema(A, schema);
+    roundTripSchema(B("b"), schema);
+    roundTripSchema(C("b", 2), schema);
   }
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
@@ -35,32 +31,22 @@ class TestMacroSchema {
 }
 
 enum Case1 {
-  A1;
-  B1;
-}
-
-enum Case2 {
-  A2;
-  B2(s: String);
-}
-
-enum Case3 {
-  A3;
-  B3(s: String, t: Int);
-}
-
-enum Case4<T> {
-  A4;
-  B4(t: T);
-}
-
-enum Case5<T1, T2> {
-  A5;
-  B5(t1: T1, t2: T2);
+  A;
+  B(s: String);
+  C(s: String, t: Int);
+  // D(t: T);
+  // E(t1: T1, t2: T2);
+  // F(t1: Option<String>);
 }
 
 /*
 TODO:
+  - cases for constructors
+   - optional argument
+   - argument with explicit type parameters
+   - argument with custom schema
+   - argument with type parameters from constructor generic
+   - argument is an array of objects
   - enum
     - constructors with no arguments
     - constructors with 1 argument
@@ -68,6 +54,9 @@ TODO:
   - typedef
   - class
   - abstract ?
+
+A
+  B<T>(v : T)
 
 
 */
