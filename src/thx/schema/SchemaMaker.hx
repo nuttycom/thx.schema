@@ -9,7 +9,7 @@ import thx.schema.macro.Macros.*;
 #end
 
 class SchemaMaker {
-  macro public static function makeEnum<E, T>(e: ExprOf<Enum<T>>): Expr {
-    return makeEnumSchema(e);
+  macro public static function makeEnum<E, T>(enumType: ExprOf<Enum<T>>, ?typeSchemas: Expr): Expr {
+    return makeEnumSchema(enumType, typeSchemas);
   }
 }
