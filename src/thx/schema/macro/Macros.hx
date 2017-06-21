@@ -2,6 +2,7 @@ package thx.schema.macro;
 
 import haxe.ds.Option;
 #if macro
+import haxe.macro.ComplexTypeTools;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.ExprTools;
@@ -11,6 +12,7 @@ import haxe.macro.TypeTools;
 using thx.Maps;
 using thx.Arrays;
 using thx.Options;
+using thx.Strings;
 
 class Macros {
 #if macro
@@ -35,10 +37,21 @@ class Macros {
   public static function extractEnumTypeFromExpression(e: Expr): Option<Type> {
     var et = Context.typeof(e);
     return switch et {
-      case TType(_.get() => t, _):
+      case TType(_.get() => t, p):
         extractTypeFromEnumQName(t.name);
       case _:
         None;
+    };
+  }
+
+  public static function extractTypeParamsFromExpression(e: Expr): Array<{ t: Type, name : String }> {
+    var et = Context.typeof(e);
+
+    return switch et {
+      case TType(_.get() => t, _):
+        t.params;
+      case _:
+        [];
     };
   }
 
@@ -77,17 +90,23 @@ class Macros {
     return ComplexType.TAnonymous(fields);
   }
 
-  static function createFunction(name: Null<String>, args: Array<{t:Type, opt:Bool, name:String}>, body: Expr, returd: ComplexType): Expr {
+  static function createFunction(name: Null<String>, args: Array<{ctype: Null<ComplexType>, opt:Bool, name:String}>, body: Expr, returd: Null<ComplexType>, typeParams: Array<String>): Expr {
     return createExpressionFromDef(EFunction(name, {
       args: args.map(a -> ({
         name: a.name,
-        type: TypeTools.toComplexType(a.t),
+        type: a.ctype,
         opt: a.opt,
         meta: null,
         value: null
       } : FunctionArg)),
       ret: returd,
-      expr: body
+      expr: body,
+      params : typeParams.map(n -> {
+        name: n,
+        constraints: null,
+        params: null,
+        meta: null
+      })
     }));
   }
 
@@ -109,8 +128,8 @@ class Macros {
     return createExpressionFromDef(EReturn(expr));
   }
 
-  static function createProperty(containerType: ComplexType, arg: {t:Type, opt:Bool, name:String}, map: Map<String, Expr>): Expr {
-    var schema = lookupSchema(TypeTools.toString(arg.t), map),
+  static function createProperty(containerType: ComplexType, arg: {t:Type, opt:Bool, name:String}, map: Map<String, SchemaExpr>, typeParameters: Array<String>): Expr {
+    var schema = lookupSchema(TypeTools.toString(arg.t), map, typeParameters),
         field = arg.name,
         type = TypeTools.toComplexType(arg.t);
         // schemaExpr = schemaInfo.holes.reduce(function(expr, hole) {
@@ -120,31 +139,45 @@ class Macros {
         //   if(arg == null) Context.error("Poop my pants for " + hole, Context.currentPos());
         //   return macro $expr($arg);
         // }, schemaInfo.expr);
-    // trace(schemaInfo.holes);
-    // trace(field);
-    // trace(schemaExpr);
-    return macro thx.schema.SchemaDSL.required($v{arg.name}, $schema, function(v : $containerType): $type return v.$field);
+    return switch schema {
+      case SchemaExpr(schema):
+        macro thx.schema.SchemaDSL.required($v{arg.name}, $schema, function(v : $containerType): $type return v.$field);
+      case SchemaFExpr(schemaf, holes):
+        var eholes = holes.map(hole -> switch hole {
+          case T(typeToArgumentName(_) => name): macro $i{name};
+          case Known(expr): expr;
+        });
+        // TODO !!! grab all known holes and throw a nice exception
+        macro thx.schema.SchemaDSL.required($v{arg.name}, $schemaf($a{eholes}), function(v : $containerType): $type return v.$field);
+    }
   }
 
-  static function constructEnumConstructorExpression(type: String, item: { name: String, field: EnumField }, holesMap): Expr {
+  static function typeToArgumentName(type: String) {
+    return 'schema${type.split(".").pop().upperCaseFirst()}';
+  }
+
+  static function constructEnumConstructorExpression(type: String, item: { name: String, field: EnumField }, providedSchemas: Map<String, SchemaExpr>, typeParameters: Array<String>): Expr {
     var cons = type.split(".").concat([item.name]),
         ctype = TypeTools.toComplexType(Context.getType(type));
     // TODO get constructor arguments and switch
     return switch item.field.type {
       case TEnum(_):
-        // trace("ALIVE CONST? " + item.name);
         macro thx.schema.SimpleSchema.constEnum($v{item.name}, $p{cons});
       case TFun(args, returd):
         var n = args.length,
             apN = 'ap$n',
             containerType = createAnonymTypeFromArgs(args),
             object = createSetObject(args),
-            constructorF = createFunction(null, args, createReturn(object), containerType),
-            objectProperties = args.map(createProperty.bind(containerType, _, holesMap)),
+            cargs = args.map(arg -> {
+              ctype: TypeTools.toComplexType(arg.t),
+              name: arg.name,
+              opt: arg.opt
+            }),
+            constructorF = createFunction(null, cargs, createReturn(object), containerType, []),
+            objectProperties = args.map(createProperty.bind(containerType, _, providedSchemas, typeParameters)),
             apNArgs = [constructorF].concat(objectProperties),
             enumArgs = args.map(a -> a.name).map(n -> macro v.$n),
             destructured = args.map(a -> a.name).map(n -> macro $i{n});
-        // trace("ALIVE? " + item.name);
         var r = macro thx.schema.SimpleSchema.alt(
           $v{item.name},
           thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs})),
@@ -154,141 +187,148 @@ class Macros {
             case _: None;
           }
         );
-        // trace(ExprTools.toString(r));
         r;
       case _:
         Context.error("unable to match correct type for enum constructor: " + item.field, Context.currentPos());
     }
   }
 
-  static function exprOfMapToMap(typeSchemas: Expr): Map<String, Expr> {
+  static function exprOfMapToMap(typeSchemas: Expr): Map<String, SchemaExpr> {
     var map = new Map();
-    // trace(typeSchemas.expr);
     switch typeSchemas.expr {
       case EConst(CIdent("null")):
       case EArrayDecl(arr):
         for(item in arr) {
-          // TType(thx.schema.Schema,[TMono(<mono>),TType(thx.schema.MyInt,[])])
           switch Context.typeof(item) {
-            case TType(_.toString() => stype, [_, TType(t, [])]) if(stype == "thx.schema.Schema"):
-              map.set(t.toString(), item);
+            case TType(_.toString() => stype, [_, t]) if(stype == "thx.schema.Schema"):
+              map.set(TypeTools.toString(t), SchemaExpr(item));
             case _:
               Context.error('The second argument to the function should be an array of schemas', Context.currentPos());
           }
-          // switch item.expr {
-          //   case EBinop(OpArrow, left, right):
-          //     // var l = Context.typeof(left);
-          //     var r = Context.typeof(right);
-          //     // trace(l);
-          //     trace(r);
-          //   case _:
-          //     Context.error('The second argument to the functions should be a map literal from type identifiers to schemas', Context.currentPos());
-          // }
         }
       case _:
         Context.error('The second argument to the function should be an array of schemas', Context.currentPos());
     }
-    // trace(typeSchemas);
 
     return map;
   }
 
-  static function generateSchemaMap(typeSchemas: Expr) {
-    var typeSchemaMap: Map<String, Expr> = new Map();
+  static function generateSchemaMap(typeSchemas: Expr): Map<String, SchemaExpr> {
+    var typeSchemaMap: Map<String, SchemaExpr> = new Map();
     Maps.merge(typeSchemaMap, [[
-        "String" => macro thx.schema.SimpleSchema.string(),
-        "Bool" => macro thx.schema.SimpleSchema.bool(),
-        "Float" => macro thx.schema.SimpleSchema.float(),
-        "Int" => macro thx.schema.SimpleSchema.int(),
-        "Null" => macro thx.schema.SimpleSchema.array
+        "String" => SchemaExpr(macro thx.schema.SimpleSchema.string()),
+        "Bool" => SchemaExpr(macro thx.schema.SimpleSchema.bool()),
+        "Float" => SchemaExpr(macro thx.schema.SimpleSchema.float()),
+        "Int" => SchemaExpr(macro thx.schema.SimpleSchema.int()),
+        "Array" => SchemaFExpr(macro thx.schema.SimpleSchema.array, [T("T")]),
+        // "Null" => macro thx.schema.SimpleSchema.array // TODO !!!
       ], exprOfMapToMap(typeSchemas)]);
     return typeSchemaMap;
   }
 
-  public static function makeEnumSchema<E>(e: Expr, typeSchemas: ExprOf<Map<String, thx.schema.SimpleSchema.Schema<E, Dynamic>>>) {
+  public static function makeEnumSchema<E>(e: Expr, typeSchemas: Expr) {
     var tenum = extractEnumTypeFromExpression(e);
+    var params = extractTypeParamsFromExpression(e);
 
     var typeSchemaMap = generateSchemaMap(typeSchemas);
+    var typeParamsArguments = [];
     var constructors: Array<Expr> = switch tenum {
       case Some(enm):
+        var typeParameters = params.map(v -> TypeTools.toString(v.t));
+        // typeParamsArguments = params.map(typeToArgumentName);
+
         var nenum = extractEnumTypeNameFromExpression(e).getOrFail("strange");
         var list = extractEnumConstructorsFromType(enm);
-        list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap));
+        var r = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap, typeParameters));
+        r;
       case None:
         Context.error('Unable to resolve $e', Context.currentPos());
         [];
     }
 
-    return macro function() return thx.schema.SimpleSchema.oneOf([$a{constructors}]);
+    // schemaf = function makeSchema(a, b) {
+    //   function _makeSchema<T1, T2>(a: T1, b: T2) {
+    //     return null;
+    //   }
+    //   return _makeSchema(a, b);
+    // }
+
+
+
+    // TODO we need holes as named arguments, DO NOT set the types of the arguments. The compiler doesn't like that
+    var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
+    var inner = createFunction(
+      "_makeSchema",
+      params.map(p -> { ctype: wrapTypeInSchema(p.t), name: typeToArgumentName(p.name), opt: false }),
+      macro return thx.schema.SimpleSchema.oneOf([$a{constructors}]),
+      null,
+      ["E"].concat(params.map(v -> v.name))
+    );
+    var r = createFunction(
+      "makeSchema",
+      params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
+      macro {
+        $inner;
+        return _makeSchema($a{argNames});
+      },
+      null,
+      []
+    );
+    return r;
   }
 
-  static function lookupSchema(name: String, map: Map<String, Expr>) {
-    var structure = nameToStructure(name);
-    return switch map.getOption(structure.name) {
-      case Some(schema):
-        schema;
-      case None:
-        Context.error('Building a schema for this type requires passing a schema for "$name" in the array, which is the second argument', Context.currentPos());
-        null;
+  static function wrapTypeInSchema(t: Type): ComplexType {
+    var ct = TypeTools.toComplexType(t);
+    return macro : thx.schema.SimpleSchema.Schema<E, $ct>;
+  }
+
+  static function lookupSchema(name: String, map: Map<String, SchemaExpr>, typeParameters: Array<String>): SchemaExpr {
+    if(typeParameters.contains(name)) {
+      var n = typeToArgumentName(name);
+      return SchemaExpr(macro $i{n});
     }
 
+    var structure = TypeStructure.fromString(name);
+    return switch map.getOption(structure.toStringType()) {
+      case Some(schemaExpr):
+        schemaExpr;
+      case None:
+        switch map.getOption(structure.name) {
+          case Some(schemaExpr):
+            // traverse parameters
+            // if param is known we look it up and apply it to SchemaFExpr -> SchemaExpr
 
-    // function _lookupSchema(acc: { expr: Expr, holes: Array<String> }, structure: TypeStructure): { expr: Expr, holes: Array<String> } {
-    //   var maybeSchema = findSchema(structure.name);
-    //   return  switch [maybeSchema, structure.params.length == 0] {
-    //     case [Some(schema), true]:
-    //       {
-    //         expr : macro ${acc.expr}($schema),
-    //         holes: acc.holes
-    //       };
-    //     case [None, true]:
-    //       {
-    //         expr : acc.expr,
-    //         holes: acc.holes.concat([structure.name])
-    //       };
-    //     case [Some(schema), false]:
-    //       {
-    //         expr : acc.expr,
-    //         holes: acc.holes
-    //       };
-    //     case [None, false]:
-    //       {
-    //         expr : acc.expr,
-    //         holes: acc.holes
-    //       };
-    //   }
-    // }
-    // var maybeSchema = findSchema(structure.name);
-    // return  switch [maybeSchema, structure.params.length == 0] {
-    //   case [Some(schema), true]:
-    //     {
-    //       expr : schema,
-    //       holes: []
-    //     };
-    //   case [None, true]:
-    //     {
-    //       expr : macro function(e) return e,
-    //       holes: [structure.name]
-    //     };
-    //   case [Some(schemaf), false]:
-    //     trace(structure.params);
-    //     var acc = {
-    //       expr : schemaf,
-    //       holes: []
-    //     };
-    //     structure.params.reduce(_lookupSchema, acc)
-    //   case [None, false]:
-    //     var acc = {
-    //       expr : macro function(e) return e, // TODO
-    //       holes: [structure.name]
-    //     };
-    //     structure.params.reduce(_lookupSchema, acc)
-    // }
-    // return _lookupSchema(structure, { expr: macro (function(e) return e), holes: [] });
+            // Array<String>
+
+            // Array<T>
+            // String
+
+            // TODO !!! what to do with the parameters?
+            schemaExpr;
+          case None:
+            // TODO !!! what to do at all?
+            Context.error('Building a schema for this type requires passing a schema for "$name" in the array, which is the second argument', Context.currentPos());
+            null;
+        }
+    }
   }
 #end
+}
 
-  public static function nameToStructure(name: String): TypeStructure {
+#if macro
+enum Hole {
+  T(name: String);
+  Known(expr: Expr);
+}
+
+enum SchemaExpr {
+  SchemaExpr(schema: Expr);
+  SchemaFExpr(schema: Expr, holes: Array<Hole>);
+}
+#end
+
+class TypeStructure {
+  public static function fromString(name: String) {
     var pWithParams = ~/^([^<]+)(?:[<](.+)[>])/;
     function splitParams(s: String): Array<String> {
       var capturePos = [],
@@ -307,20 +347,26 @@ class Macros {
       return pairs.map(p -> s.substring(p._0+1, p._1)).map(StringTools.trim);
     }
     return if(pWithParams.match(name)) {
-      {
-        name: pWithParams.matched(1),
-        params: splitParams(pWithParams.matched(2)).map(nameToStructure),
-      };
+      new TypeStructure(pWithParams.matched(1), splitParams(pWithParams.matched(2)).map(fromString));
     } else {
-      {
-        name: name,
-        params: []
-      };
+      new TypeStructure(name, []);
     }
   }
-}
 
-typedef TypeStructure = {
-  name: String,
-  params: Array<TypeStructure>
+  public var name: String;
+  public var params: Array<TypeStructure>;
+
+  public function new(name, params) {
+    this.name = name;
+    this.params = params;
+  }
+
+  public function hasParams()
+    return params.length > 0;
+
+  public function toStringType() {
+    // space is actually important here
+    var rest = if(hasParams()) '<${params.map(p -> p.toStringType()).join(", ")}>' else "";
+    return name + rest;
+  }
 }

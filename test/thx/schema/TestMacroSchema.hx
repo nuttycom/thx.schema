@@ -2,10 +2,10 @@ package thx.schema;
 
 import utest.Assert.*;
 import thx.schema.SchemaMaker.*;
-import thx.Unit;
 import thx.schema.SimpleSchema;
 import thx.schema.SimpleSchema.*;
 import thx.schema.SchemaDSL.*;
+import thx.schema.macro.Macros;
 using thx.schema.SchemaDynamicExtensions;
 import thx.Either;
 import thx.Functions.identity;
@@ -15,36 +15,37 @@ class TestMacroSchema {
   public function new() {}
 
   public function testMakeEnumCase1() {
-    var schema = makeEnum(Case1, [ MyInts.schema() ])();
+    var schemaf = makeEnum(Case1, [
+                    MyInts.schema(),
+                    array(string()),
+                    array(float())
+                  ]),
+        schema = schemaf(string(), int());
+
     roundTripSchema(Case1.A, schema);
     roundTripSchema(Case1.B("b"), schema);
     roundTripSchema(Case1.C("b", 2, 0.1, false), schema);
+    roundTripSchema(Case1.D({ i: 666 }), schema);
+    roundTripSchema(Case1.E(["x", "y"]), schema);
+    roundTripSchema(Case1.F([0.1, 0.2]), schema);
+    roundTripSchema(Case1.G("1"), schema);
   }
 
-  // public function testFailPassingSchema() {
-  //   var schema = makeEnum(Case2, [])();
-  //   trace(schema);
-  // }
-
   public function testMacroStuff() {
-    same({name: "String", params: []}, thx.schema.macro.Macros.nameToStructure("String"));
-    same({name: "Option", params: [{name: "Int", params: []}]}, thx.schema.macro.Macros.nameToStructure("Option<Int>"));
-    same({
-      name: "Either3", params: [{
-        name: "Either",
-        params: [{ name: "String", params: [] }, { name: "Int", params: [] }]
-      }, {
-        name: "SEither",
-        params: [{ name: "Bool", params: [] }, { name: "Float", params: [] }]
-      }, {
-        name: "FEither",
-        params: [{ name: "SomeStuff", params: [] }, { name: "Meh", params: [] }]
-      }]
-    }, thx.schema.macro.Macros.nameToStructure("Either3<Either<String, Int>, SEither<Bool, Float>, FEither<SomeStuff, Meh>>"));
+    same(new TypeStructure("String", []), TypeStructure.fromString("String"));
+    same(new TypeStructure("Option", [new TypeStructure("Int", [])]), TypeStructure.fromString("Option<Int>"));
+    same(
+      new TypeStructure("Either3", [
+        new TypeStructure("Either", [new TypeStructure("String", []), new TypeStructure("Int", [])]),
+        new TypeStructure("SEither", [new TypeStructure("Bool", []), new TypeStructure("Float", [])]),
+        new TypeStructure("FEither", [new TypeStructure("SomeStuff", []), new TypeStructure("Meh", [])]),
+      ]),
+      TypeStructure.fromString("Either3<Either<String, Int>, SEither<Bool, Float>, FEither<SomeStuff, Meh>>"));
   }
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
     var r: T = schema.renderDynamic(v);
+    // trace(r);
     same(Right(v), schema.parseDynamic(identity, r));
   }
 }
@@ -53,11 +54,15 @@ enum Case1<T1, T2> {
   A;
   B(bs: String);
   C(cs: String, ci: Int, cf: Float, cb: Bool);
-  D(di: MyInt);
+  D(d: MyInt);
+  E(e: Array<String>);
+  F(f: Array<Float>);
+  G(a: T1);
+  // G(a: Array<T1>);
+  // G(e: Either<Int, Float>);
   // E(?s: Null<String>);
   // F(s: Null<String>);
   // D(t: T1);
-  // E(t: Array<T1>);
   // F(t1: T1, t2: T2);
   // G(t1: Option<String>);
   // H<T3>(t3: Option<Array<T3>>);
@@ -92,6 +97,7 @@ TODO:
   - typedef
   - class
   - abstract ?
+  - cases where E and String diverge
 
 A
   B<T>(v : T)
