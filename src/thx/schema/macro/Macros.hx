@@ -300,13 +300,6 @@ class Macros {
 #end
 }
 
-#if macro
-enum Hole {
-  T(name: String);
-  Known(expr: Expr);
-}
-#end
-
 class TypeStructure {
   public static function fromString(name: String) {
     var pWithParams = ~/^([^<]+)(?:[<](.+)[>])/;
