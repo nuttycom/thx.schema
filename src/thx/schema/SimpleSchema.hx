@@ -44,6 +44,14 @@ class SimpleSchema {
   public static function lazy<E, A>(base: Void -> SchemaF<E, Unit, A>): Schema<E, A>
     return liftS(LazySchema(base));
 
+  public static var core(default, null) = (function() {
+    var either = SchemaMaker.registerSchema("thx.Either", SchemaMaker.makeEnum(thx.Either));
+    SchemaMaker.registerSchema("haxe.ds.Either", SchemaMaker.makeEnum(haxe.ds.Either));
+    return {
+      either: either
+    };
+  })();
+
   //
   // Constructors for oneOf alternatives
   //
@@ -64,6 +72,12 @@ class SimpleSchema {
     return oneOf([
       alt("some", s, function(a: A) return Some(a), thx.Functions.identity),
       constAlt("none", None, function(a: Option<A>, b: Option<A>) return a == b)
+    ]);
+
+  public static function makeNullable<E, A>(s: Schema<E, A>): Schema<E, Null<A>>
+    return oneOf([
+      alt("value", s, function(a: A) return a, function(a: Null<A>) return Options.ofValue(a)),
+      constAlt("novalue", null, function(a: A, b: A) return a == b)
     ]);
 
   // Convenience constructor for a single-property object schema that simply wraps another schema.

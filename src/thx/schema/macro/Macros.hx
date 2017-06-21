@@ -80,7 +80,7 @@ class Macros {
   static function createFieldFromFunctionArg(arg: {t:Type, opt:Bool, name:String}): Field {
     return {
       name: arg.name,
-      pos: Context.currentPos(), // TODO
+      pos: Context.currentPos(),
       kind: FVar(TypeTools.toComplexType(arg.t))
     };
   }
@@ -132,6 +132,7 @@ class Macros {
     var schema = lookupSchema(TypeTools.toString(arg.t), map, typeParameters),
         field = arg.name,
         type = TypeTools.toComplexType(arg.t);
+    // TODO inspect $schema to see if it is an Option, in that case unwrap and use `optional`
     return macro thx.schema.SchemaDSL.required($v{arg.name}, $schema, function(v : $containerType): $type return v.$field);
   }
 
@@ -142,7 +143,7 @@ class Macros {
   static function constructEnumConstructorExpression(type: String, item: { name: String, field: EnumField }, providedSchemas: Map<String, Expr>, typeParameters: Array<String>): Expr {
     var cons = type.split(".").concat([item.name]),
         ctype = TypeTools.toComplexType(Context.getType(type));
-    // TODO get constructor arguments and switch
+
     return switch item.field.type {
       case TEnum(_):
         macro thx.schema.SimpleSchema.constEnum($v{item.name}, $p{cons});
@@ -185,6 +186,8 @@ class Macros {
           switch Context.typeof(item) {
             case TType(_.toString() => stype, [_, t]) if(stype == "thx.schema.Schema"):
               map.set(TypeTools.toString(t), item);
+            case TFun(_, TType(_.toString() => stype, [_, t])) if(stype == "thx.schema.Schema"):
+              map.set(TypeTools.toString(t), item);
             case _:
               Context.error('The second argument to the function should be an array of schemas', Context.currentPos());
           }
@@ -196,24 +199,17 @@ class Macros {
     return map;
   }
 
-  static function generateSchemaMap(typeSchemas: Expr): Map<String, Expr> {
+  static function generateSchemaMap(defaults, typeSchemas: Expr): Map<String, Expr> {
     var typeSchemaMap: Map<String, Expr> = new Map();
-    Maps.merge(typeSchemaMap, [[
-        "String" => macro thx.schema.SimpleSchema.string(),
-        "Bool" => macro thx.schema.SimpleSchema.bool(),
-        "Float" => macro thx.schema.SimpleSchema.float(),
-        "Int" => macro thx.schema.SimpleSchema.int(),
-        "Array" => macro thx.schema.SimpleSchema.array,
-        // "Null" => macro thx.schema.SimpleSchema.array // TODO !!!
-      ], exprOfMapToMap(typeSchemas)]);
+    Maps.merge(typeSchemaMap, [defaults, exprOfMapToMap(typeSchemas)]);
     return typeSchemaMap;
   }
 
-  public static function makeEnumSchema<E>(e: Expr, typeSchemas: Expr) {
+  public static function makeEnumSchema<E>(e: Expr, defaults: Map<String, Expr>, typeSchemas: Expr) {
     var tenum = extractEnumTypeFromExpression(e);
     var params = extractTypeParamsFromExpression(e);
 
-    var typeSchemaMap = generateSchemaMap(typeSchemas);
+    var typeSchemaMap = generateSchemaMap(defaults, typeSchemas);
     // var typeParamsArguments = [];
     var constructors: Array<Expr> = switch tenum {
       case Some(enm):
@@ -229,16 +225,7 @@ class Macros {
         [];
     }
 
-    // schemaf = function makeSchema(a, b) {
-    //   function _makeSchema<T1, T2>(a: T1, b: T2) {
-    //     return null;
-    //   }
-    //   return _makeSchema(a, b);
-    // }
 
-
-
-    // TODO we need holes as named arguments, DO NOT set the types of the arguments. The compiler doesn't like that
     var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
     var inner = createFunction(
       "_makeSchema",
@@ -249,6 +236,7 @@ class Macros {
     );
     var r = createFunction(
       "makeSchema",
+      // DO NOT set the types of the arguments for ctype. The compiler doesn't like that
       params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
       macro {
         $inner;

@@ -15,10 +15,9 @@ class TestMacroSchema {
   public function new() {}
 
   public function testMakeEnumCase1() {
+    // var se = SimpleSchema.core.either;
     var schemaf = makeEnum(Case1, [
-                    MyInts.schema(),
-                    // array(string()),
-                    // array(float())
+                    MyInts.schema()
                   ]),
         schema = schemaf(string(), int());
 
@@ -30,6 +29,17 @@ class TestMacroSchema {
     roundTripSchema(Case1.F([0.1, 0.2]), schema);
     roundTripSchema(Case1.G("1"), schema);
     roundTripSchema(Case1.H([[{ i: 777 }, { i: 666 }]]), schema);
+    roundTripSchema(Case1.I(["1"]), schema);
+    roundTripSchema(Case1.J(Left(1)), schema);
+    roundTripSchema(Case1.J(Right(0.1)), schema);
+    roundTripSchema(Case1.K("x", 7), schema);
+    roundTripSchema(Case1.L(None), schema);
+    roundTripSchema(Case1.L(Some("1")), schema);
+    roundTripSchema(Case1.M(null), schema);
+    roundTripSchema(Case1.M("Not Null"), schema);
+    roundTripSchema(Case1.N(), schema);
+    roundTripSchema(Case1.N(null), schema);
+    roundTripSchema(Case1.N("Not Null"), schema);
   }
 
   public function testMacroStuff() {
@@ -46,7 +56,7 @@ class TestMacroSchema {
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
     var r: T = schema.renderDynamic(v);
-    // trace(r);
+    trace(r);
     same(Right(v), schema.parseDynamic(identity, r));
   }
 }
@@ -60,15 +70,14 @@ enum Case1<T1, T2> {
   F(f: Array<Float>);
   G(a: T1);
   H(a: Array<Array<MyInt>>);
+  I(a: Array<T1>);
+  J(e: Either<Int, Float>);
+  K(t1: T1, t2: T2);
+  L(t1: Option<String>);
+  M(s: Null<String>);
+  N(?s: String);
 
-  // H(a: Array<T1>);
-  // G(e: Either<Int, Float>);
-  // E(?s: Null<String>);
-  // F(s: Null<String>);
-  // D(t: T1);
-  // F(t1: T1, t2: T2);
-  // G(t1: Option<String>);
-  // H<T3>(t3: Option<Array<T3>>);
+  // O<T3>(t3: Option<Array<T3>>);
 }
 
 enum Case2 {
@@ -87,50 +96,19 @@ class MyInts {
 }
 /*
 TODO:
-  - cases for constructors
-   - optional argument
-   - argument with explicit type parameters
-   - argument with custom schema
-   - argument with type parameters from constructor generic
-   - argument is an array of objects
   - enum
-    - constructors with no arguments
+    - cases for constructors
+      + optional argument
+      + argument with explicit type parameters
+      + argument with custom schema
+      - argument is an array of objects
+      - argument with type parameters from constructor generic
+    + constructors with no arguments
     - constructors with 1 argument
-    - constructors with multiple arguments
-  - typedef
+    + constructors with multiple arguments
   - class
+  - typedef
   - abstract ?
+  - basic schemas for core types (eg: thx.DateTimeUtc)
   - cases where E and String diverge
-
-A
-  B<T>(v : T)
-
-
 */
-
-// class MyData implements Data {
-//   // var a: Int;
-//   @:schema(blah.Franco.schema)
-//   var a: Case1; // <- ???
-//   var b: MyDataTwo;
-// }
-
-
-// class MyDataTwo implements Data {
-//   var a: Int;
-// }
-
-
-// Maybe
-//   @:singleArgument
-//   Some: // {some: { value: value }} || {some: value}
-//   None: // none: {}
-
-// enum Case1 {
-//   A;
-//   B(case2: Case2);
-// }
-
-// class Case1s {
-
-// }
