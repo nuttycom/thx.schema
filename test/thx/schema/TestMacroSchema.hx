@@ -17,8 +17,8 @@ class TestMacroSchema {
   public function testMakeEnumCase1() {
     var schemaf = makeEnum(Case1, [
                     MyInts.schema(),
-                    array(string()),
-                    array(float())
+                    // array(string()),
+                    // array(float())
                   ]),
         schema = schemaf(string(), int());
 
@@ -29,6 +29,7 @@ class TestMacroSchema {
     roundTripSchema(Case1.E(["x", "y"]), schema);
     roundTripSchema(Case1.F([0.1, 0.2]), schema);
     roundTripSchema(Case1.G("1"), schema);
+    roundTripSchema(Case1.H([[{ i: 777 }, { i: 666 }]]), schema);
   }
 
   public function testMacroStuff() {
@@ -58,7 +59,9 @@ enum Case1<T1, T2> {
   E(e: Array<String>);
   F(f: Array<Float>);
   G(a: T1);
-  // G(a: Array<T1>);
+  H(a: Array<Array<MyInt>>);
+
+  // H(a: Array<T1>);
   // G(e: Either<Int, Float>);
   // E(?s: Null<String>);
   // F(s: Null<String>);
