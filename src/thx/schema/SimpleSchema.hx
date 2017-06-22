@@ -48,7 +48,8 @@ class SimpleSchema {
     var either = SchemaMaker.registerSchema("thx.Either", SchemaMaker.makeEnum(thx.Either));
     SchemaMaker.registerSchema("haxe.ds.Either", SchemaMaker.makeEnum(haxe.ds.Either));
     return {
-      either: either
+      either: either,
+      // TODO make it break with a schema fixed on E (String)
     };
   })();
 

@@ -56,7 +56,7 @@ class TestMacroSchema {
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
     var r: T = schema.renderDynamic(v);
-    trace(r);
+    // trace(r);
     same(Right(v), schema.parseDynamic(identity, r));
   }
 }
@@ -110,5 +110,42 @@ TODO:
   - typedef
   - abstract ?
   - basic schemas for core types (eg: thx.DateTimeUtc)
+    - Any
+    - Date
+    - DateTime
+    - DateTimeUtc
+    - LocalDate
+    - LocalMonthDay
+    - LocalYearMonth
+    - Nel
+    - Time
+    - TimePeriod
+    - Timestamp
+
+    - Tuple (and friends)
+    - Map
+    - Ord
+    - Maybe
+    - ReadonlyArray
+    - Validation
+    - Weekday
+    - Uuid
+    - Decimal
+    - Char
+    - BitMatrix
+    - BitSet
+    - BigInt
+    - Rational
+    - Int64
+    - Path
+    - Url
+    - QueryString
+    - Result
+
+    - HashSet
+    - OrderedMap
+    - OrderedSet
+    - Set
+    - Error and friends?
   - cases where E and String diverge
 */
