@@ -1,6 +1,5 @@
 package thx.schema.macro;
 
-import haxe.ds.Option;
 #if macro
 import haxe.macro.ComplexTypeTools;
 import haxe.macro.Context;
@@ -11,7 +10,6 @@ import haxe.macro.TypeTools;
 #end
 using thx.Maps;
 using thx.Arrays;
-using thx.Options;
 using thx.Strings;
 
 class Macros {
@@ -57,7 +55,6 @@ class Macros {
   public static function extractClassTypeParamsFromExpression(e: Expr): Array<{ t: Type, name : String }> {
     return switch extractTypeFromExpression(e) {
       case TInst(_.get() => t, p):
-        trace(t.params);
         t.params;
       case _:
         [];
