@@ -60,6 +60,11 @@ class TestMacroSchema {
     roundTripSchema(new Class2({ i: 3 }, Some(Right([3.14]))), schemaf());
   }
 
+  public function testClass3() {
+    var schemaf = makeClass(Class3, []);
+    roundTripSchema(new Class3("a", 3), schemaf(string(), int()));
+  }
+
   public function testMacroStuff() {
     same(new TypeStructure("String", []), TypeStructure.fromString("String"));
     same(new TypeStructure("Option", [new TypeStructure("Int", [])]), TypeStructure.fromString("Option<Int>"));
@@ -156,6 +161,16 @@ class Class2 {
   public function new(myInt, myOpt) {
     this.myInt = myInt;
     this.myOpt = myOpt;
+  }
+}
+
+class Class3<T1, T2> {
+  public var t1: T1;
+  public var t2: T2;
+
+  public function new(t1, t2) {
+    this.t1 = t1;
+    this.t2 = t2;
   }
 }
 /*

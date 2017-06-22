@@ -46,9 +46,18 @@ class Macros {
 
   public static function extractTypeParamsFromExpression(e: Expr): Array<{ t: Type, name : String }> {
     var et = Context.typeof(e);
-
     return switch et {
-      case TType(_.get() => t, _):
+      case TType(_.get() => t, p):
+        t.params;
+      case _:
+        [];
+    };
+  }
+
+  public static function extractClassTypeParamsFromExpression(e: Expr): Array<{ t: Type, name : String }> {
+    return switch extractTypeFromExpression(e) {
+      case TInst(_.get() => t, p):
+        trace(t.params);
         t.params;
       case _:
         [];
@@ -264,9 +273,7 @@ class Macros {
     var tenum = extractTypeFromExpression(e);
     var params = extractTypeParamsFromExpression(e);
 
-    // var typeParamsArguments = [];
     var typeParameters = params.map(v -> TypeTools.toString(v.t));
-    // typeParamsArguments = params.map(typeToArgumentName);
 
     var nenum = extractTypeNameFromExpression(e);
     var list = extractEnumConstructorsFromType(tenum);
@@ -298,7 +305,7 @@ class Macros {
     var tclass = extractTypeFromExpression(e);
     var sclass = extractTypeNameFromExpression(e);
     var sclassParts = sclass.split(".");
-    var params = extractTypeParamsFromExpression(e);
+    var params = extractClassTypeParamsFromExpression(e);
     var fields = extractFieldsFromClass(tclass).filter(keepVariables);
     var n = fields.length;
     var apN = 'ap$n';
@@ -315,6 +322,8 @@ class Macros {
       opt: false
     });
 
+    var typeParameters = params.map(v -> TypeTools.toString(v.t));
+
     var bodyParts = [ macro var inst = Type.createEmptyInstance($p{sclassParts}) ]
                       .concat(cargs.map(arg -> macro Reflect.setField(inst, $v{arg.name}, $i{arg.name})))
                       .append(macro return inst);
@@ -322,7 +331,7 @@ class Macros {
 
     var containerType = TypeTools.toComplexType(tclass);
     var constructorF = createFunction(null, cargs, body, containerType, []);
-    var objectProperties = argsForProps.map(createProperty.bind(containerType, _, typeSchemaMap, [])); // TODO !!! Type parameters instead of []
+    var objectProperties = argsForProps.map(createProperty.bind(containerType, _, typeSchemaMap, typeParameters));
     var apNArgs = [constructorF].concat(objectProperties);
 
     var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
