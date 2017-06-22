@@ -11,9 +11,13 @@ class SchemaMaker {
     return makeEnumSchema(enumType, generateSchemaMap(schemas, typeSchemas));
   }
 
-  macro public static function makeClass<E, T>(enumType: ExprOf<Class<T>>, ?typeSchemas: Expr): Expr {
-    return makeClassSchema(enumType, generateSchemaMap(schemas, typeSchemas));
+  macro public static function makeClass<E, T>(classType: ExprOf<Class<T>>, ?typeSchemas: Expr): Expr {
+    return makeClassSchema(classType, generateSchemaMap(schemas, typeSchemas));
   }
+
+  // macro public static function makeObject<E, T>(anonType: Expr, ?typeSchemas: Expr): Expr {
+  //   return makeObjectSchema(anonType, generateSchemaMap(schemas, typeSchemas));
+  // }
 
   macro public static function registerSchema<E, T>(name: String, schema: Expr) {
     schemas.set(name, schema);

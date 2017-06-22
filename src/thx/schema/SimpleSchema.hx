@@ -44,11 +44,18 @@ class SimpleSchema {
   public static function lazy<E, A>(base: Void -> SchemaF<E, Unit, A>): Schema<E, A>
     return liftS(LazySchema(base));
 
+  // public static function either<E, L, R>(schemaL, schemaR) {
+  //   return oneOf([
+  //     alt("left", schemaL, thx.Either.Left, (x: Either<L, R>) -> switch x { case Left(v): Some(v); case _: None; }),
+  //     alt("right", schemaR, thx.Either.Right, (x: Either<L, R>) -> switch x { case Right(v): Some(v); case _: None; })
+  //   ]);
+  // }
+
   public static var core(default, null) = (function() {
     var either = SchemaMaker.registerSchema("thx.Either", SchemaMaker.makeEnum(thx.Either));
     SchemaMaker.registerSchema("haxe.ds.Either", SchemaMaker.makeEnum(haxe.ds.Either));
     return {
-      either: either,
+      either: either
       // TODO make it break with a schema fixed on E (String)
     };
   })();

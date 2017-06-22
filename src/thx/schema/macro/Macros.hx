@@ -72,6 +72,10 @@ class Macros {
     };
   }
 
+  public static function extractTypePathFromExpression(e: Expr): Array<String> {
+    return extractTypeNameFromExpression(e).split(".");
+  }
+
   static function createRef<T>(t: T): Ref<T> {
     return {
       get: function (): T {
@@ -134,8 +138,8 @@ class Macros {
     return createExpressionFromDef(EReturn(expr));
   }
 
-  static function createProperty(containerType: ComplexType, arg: {t:Type, opt:Bool, name:String}, map: Map<String, Expr>, typeParameters: Array<String>): Expr {
-    var schema = lookupSchema(TypeTools.toString(arg.t), map, typeParameters),
+  static function createProperty(containerType: ComplexType, arg: {t:Type, opt:Bool, name:String}, map: Map<String, Expr>): Expr {
+    var schema = lookupSchema(TypeTools.toString(arg.t), map),
         field = arg.name,
         type = TypeTools.toComplexType(arg.t);
     // TODO inspect $schema to see if it is an Option, in that case unwrap and use `optional`
@@ -146,7 +150,7 @@ class Macros {
     return 'schema${type.split(".").pop().upperCaseFirst()}';
   }
 
-  static function constructEnumConstructorExpression(type: String, item: { name: String, field: EnumField }, providedSchemas: Map<String, Expr>, typeParameters: Array<String>): Expr {
+  static function constructEnumConstructorExpression(type: String, item: { name: String, field: EnumField }, providedSchemas: Map<String, Expr>): Expr {
     var cons = type.split(".").concat([item.name]),
         ctype = TypeTools.toComplexType(Context.getType(type));
 
@@ -164,7 +168,7 @@ class Macros {
               opt: arg.opt
             }),
             constructorF = createFunction(null, cargs, createReturn(object), containerType, []),
-            objectProperties = args.map(createProperty.bind(containerType, _, providedSchemas, typeParameters)),
+            objectProperties = args.map(createProperty.bind(containerType, _, providedSchemas)),
             apNArgs = [constructorF].concat(objectProperties),
             enumArgs = args.map(a -> a.name).map(n -> macro v.$n),
             destructured = args.map(a -> a.name).map(n -> macro $i{n});
@@ -235,12 +239,8 @@ class Macros {
     }
   }
 
-  static function _lookupSchema(structure: TypeStructure, map: Map<String, Expr>, typeParameters: Array<String>): Expr {
+  static function _lookupSchema(structure: TypeStructure, map: Map<String, Expr>): Expr {
     var name = structure.toStringType();
-    if(typeParameters.contains(name)) {
-      var n = typeToArgumentName(name);
-      return macro $i{n};
-    }
 
     switch map.getOption(name) {
       case Some(expr):
@@ -250,7 +250,7 @@ class Macros {
           case Some(schema):
             if(structure.hasParams()) {
               var args = structure.params
-                          .map(p -> _lookupSchema(p, map, typeParameters));
+                          .map(p -> _lookupSchema(p, map));
               return macro $schema($a{args});
             } else {
               return schema;
@@ -262,19 +262,23 @@ class Macros {
     }
   }
 
-  static function lookupSchema(name: String, map: Map<String, Expr>, typeParameters: Array<String>): Expr {
-    return _lookupSchema(TypeStructure.fromString(name), map, typeParameters);
+  static function lookupSchema(name: String, map: Map<String, Expr>): Expr {
+    return _lookupSchema(TypeStructure.fromString(name), map);
   }
 
   public static function makeEnumSchema<E>(e: Expr, typeSchemaMap: Map<String, Expr>) {
     var tenum = extractTypeFromExpression(e);
     var params = extractTypeParamsFromExpression(e);
 
-    var typeParameters = params.map(v -> TypeTools.toString(v.t));
+    // push all types to map
+    params.map(v -> TypeTools.toString(v.t)).each(name -> {
+      var n = typeToArgumentName(name);
+      typeSchemaMap.set(name, macro $i{n});
+    });
 
     var nenum = extractTypeNameFromExpression(e);
     var list = extractEnumConstructorsFromType(tenum);
-    var constructors: Array<Expr> = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap, typeParameters));
+    var constructors: Array<Expr> = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap));
 
     var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
     var inner = createFunction(
@@ -300,9 +304,15 @@ class Macros {
 
   public static function makeClassSchema<E>(e: Expr, typeSchemaMap: Map<String, Expr>) {
     var tclass = extractTypeFromExpression(e);
-    var sclass = extractTypeNameFromExpression(e);
-    var sclassParts = sclass.split(".");
+    var sclassParts = extractTypePathFromExpression(e);
     var params = extractClassTypeParamsFromExpression(e);
+
+    // push all types to map
+    params.map(v -> TypeTools.toString(v.t)).each(name -> {
+      var n = typeToArgumentName(name);
+      typeSchemaMap.set(name, macro $i{n});
+    });
+
     var fields = extractFieldsFromClass(tclass).filter(keepVariables);
     var n = fields.length;
     var apN = 'ap$n';
@@ -319,8 +329,6 @@ class Macros {
       opt: false
     });
 
-    var typeParameters = params.map(v -> TypeTools.toString(v.t));
-
     var bodyParts = [ macro var inst = Type.createEmptyInstance($p{sclassParts}) ]
                       .concat(cargs.map(arg -> macro Reflect.setField(inst, $v{arg.name}, $i{arg.name})))
                       .append(macro return inst);
@@ -328,7 +336,7 @@ class Macros {
 
     var containerType = TypeTools.toComplexType(tclass);
     var constructorF = createFunction(null, cargs, body, containerType, []);
-    var objectProperties = argsForProps.map(createProperty.bind(containerType, _, typeSchemaMap, typeParameters));
+    var objectProperties = argsForProps.map(createProperty.bind(containerType, _, typeSchemaMap));
     var apNArgs = [constructorF].concat(objectProperties);
 
     var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
