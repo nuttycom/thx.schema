@@ -8,7 +8,11 @@ import thx.schema.macro.Macros.*;
 
 class SchemaMaker {
   macro public static function makeEnum<E, T>(enumType: ExprOf<Enum<T>>, ?typeSchemas: Expr): Expr {
-    return makeEnumSchema(enumType, schemas, typeSchemas);
+    return makeEnumSchema(enumType, generateSchemaMap(schemas, typeSchemas));
+  }
+
+  macro public static function makeClass<E, T>(enumType: ExprOf<Class<T>>, ?typeSchemas: Expr): Expr {
+    return makeClassSchema(enumType, generateSchemaMap(schemas, typeSchemas));
   }
 
   macro public static function registerSchema<E, T>(name: String, schema: Expr) {

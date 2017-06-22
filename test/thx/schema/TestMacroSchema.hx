@@ -42,6 +42,24 @@ class TestMacroSchema {
     roundTripSchema(Case1.N("Not Null"), schema);
   }
 
+  public function testEmptyClass() {
+    var schemaf = makeClass(EmptyClass);
+    roundTripSchema(new EmptyClass(), schemaf());
+  }
+
+  public function testClass1() {
+    var schemaf = makeClass(Class1);
+    roundTripSchema(new Class1("hi"), schemaf());
+  }
+
+  public function testClass2() {
+    var schemaf = makeClass(Class2, [
+      MyInts.schema()
+    ]);
+    roundTripSchema(new Class2({ i: 3 }, None), schemaf());
+    roundTripSchema(new Class2({ i: 3 }, Some(Right([3.14]))), schemaf());
+  }
+
   public function testMacroStuff() {
     same(new TypeStructure("String", []), TypeStructure.fromString("String"));
     same(new TypeStructure("Option", [new TypeStructure("Int", [])]), TypeStructure.fromString("Option<Int>"));
@@ -92,6 +110,52 @@ class MyInts {
       (i) -> { i: i },
       required("i", int(), (x:MyInt) -> x.i)
     ));
+  }
+}
+
+class EmptyClass {
+  public function new() {}
+}
+
+class Class1 {
+  public var s: String;
+  var s1: String = "z";
+  public var s2(null, null) = "z";
+  public var i = 3;
+  public var f(default, null) = 3.0;
+  public var f1(get, null): Float;
+  @:isVar public var f2(get, set): Float;
+
+  public function new(s) {
+    this.s = s;
+    f1 = 3;
+    f2 = 4.0;
+  }
+
+  public function getI() {
+    return this.i;
+  }
+
+  function get_f1() {
+    return f1;
+  }
+
+  function get_f2() {
+    return f2;
+  }
+
+  function set_f2(v: Float) {
+    return f2 = v;
+  }
+}
+
+class Class2 {
+  public var myInt: MyInt;
+  public var myOpt: Option<Either<String, Array<Float>>>;
+
+  public function new(myInt, myOpt) {
+    this.myInt = myInt;
+    this.myOpt = myOpt;
   }
 }
 /*

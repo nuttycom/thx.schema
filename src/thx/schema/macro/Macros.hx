@@ -21,26 +21,26 @@ class Macros {
     return e.names.map(name -> { name: name, field: e.constructs.get(name) });
   }
 
-  public static function extractTypeFromEnumQName(s: String): Option<Type> {
-    return extractTypeNameFromEnum(s).map(Context.getType);
+  public static function extractTypeFromQName(s: String): Type {
+    return Context.getType(extractTypeNameFromKind(s));
   }
 
-  public static function extractTypeNameFromEnum(s: String): Option<String> {
-    var pattern = ~/^Enum[<](.+)[>]$/;
+  public static function extractTypeNameFromKind(s: String): String {
+    var pattern = ~/^(?:Enum|Class)[<](.+)[>]$/;
     return if(pattern.match(s)) {
-      Some(pattern.matched(1));
+      pattern.matched(1);
     } else {
-      None;
+      Context.error("Unable to extract type name from kind: " + s, Context.currentPos());
     }
   }
 
-  public static function extractEnumTypeFromExpression(e: Expr): Option<Type> {
+  public static function extractTypeFromExpression(e: Expr): Type {
     var et = Context.typeof(e);
     return switch et {
       case TType(_.get() => t, p):
-        extractTypeFromEnumQName(t.name);
+        extractTypeFromQName(t.name);
       case _:
-        None;
+        Context.error('Unable to extract type from expression: ${et}' , Context.currentPos());
     };
   }
 
@@ -56,13 +56,13 @@ class Macros {
   }
 
 
-  public static function extractEnumTypeNameFromExpression(e: Expr): Option<String> {
+  public static function extractTypeNameFromExpression(e: Expr): String {
     var et = Context.typeof(e);
     return switch et {
       case TType(_.get() => t, _):
-        extractTypeNameFromEnum(t.name);
+        extractTypeNameFromKind(t.name);
       case _:
-        None;
+        Context.error('Unable to extract type name from expression: ${et}' , Context.currentPos());
     };
   }
 
@@ -133,7 +133,7 @@ class Macros {
         field = arg.name,
         type = TypeTools.toComplexType(arg.t);
     // TODO inspect $schema to see if it is an Option, in that case unwrap and use `optional`
-    return macro thx.schema.SchemaDSL.required($v{arg.name}, $schema, function(v : $containerType): $type return v.$field);
+    return macro thx.schema.SchemaDSL.required($v{arg.name}, $schema, function(v : $containerType): $type return Reflect.field(v, $v{field}));
   }
 
   static function typeToArgumentName(type: String) {
@@ -199,58 +199,34 @@ class Macros {
     return map;
   }
 
-  static function generateSchemaMap(defaults, typeSchemas: Expr): Map<String, Expr> {
+  public static function generateSchemaMap(defaults, typeSchemas: Expr): Map<String, Expr> {
     var typeSchemaMap: Map<String, Expr> = new Map();
     Maps.merge(typeSchemaMap, [defaults, exprOfMapToMap(typeSchemas)]);
     return typeSchemaMap;
   }
 
-  public static function makeEnumSchema<E>(e: Expr, defaults: Map<String, Expr>, typeSchemas: Expr) {
-    var tenum = extractEnumTypeFromExpression(e);
-    var params = extractTypeParamsFromExpression(e);
-
-    var typeSchemaMap = generateSchemaMap(defaults, typeSchemas);
-    // var typeParamsArguments = [];
-    var constructors: Array<Expr> = switch tenum {
-      case Some(enm):
-        var typeParameters = params.map(v -> TypeTools.toString(v.t));
-        // typeParamsArguments = params.map(typeToArgumentName);
-
-        var nenum = extractEnumTypeNameFromExpression(e).getOrFail("strange");
-        var list = extractEnumConstructorsFromType(enm);
-        var r = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap, typeParameters));
-        r;
-      case None:
-        Context.error('Unable to resolve $e', Context.currentPos());
-        [];
-    }
-
-
-    var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
-    var inner = createFunction(
-      "_makeSchema",
-      params.map(p -> { ctype: wrapTypeInSchema(p.t), name: typeToArgumentName(p.name), opt: false }),
-      macro return thx.schema.SimpleSchema.oneOf([$a{constructors}]),
-      null,
-      ["E"].concat(params.map(v -> v.name))
-    );
-    var r = createFunction(
-      "makeSchema",
-      // DO NOT set the types of the arguments for ctype. The compiler doesn't like that
-      params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
-      macro {
-        $inner;
-        return _makeSchema($a{argNames});
-      },
-      null,
-      []
-    );
-    return r;
-  }
-
   static function wrapTypeInSchema(t: Type): ComplexType {
     var ct = TypeTools.toComplexType(t);
     return macro : thx.schema.SimpleSchema.Schema<E, $ct>;
+  }
+
+  static function keepVariables(f: ClassField): Bool {
+    return switch f.kind {
+      case FVar(AccCall, AccCall): f.meta.has(":isVar");
+      case FVar(AccCall, _): true;
+      case FVar(AccNormal, _) | FVar(AccNo, _): true;
+      case _: false;
+    }
+  }
+
+  static function extractFieldsFromClass(ctype: Type) {
+    return switch ctype {
+      case TInst(_.get() => cls, _):
+        cls.fields.get();
+      case _:
+        Context.error('Unable to extract fields from class ${ctype}', Context.currentPos());
+        [];
+    }
   }
 
   static function _lookupSchema(structure: TypeStructure, map: Map<String, Expr>, typeParameters: Array<String>): Expr {
@@ -278,12 +254,99 @@ class Macros {
             return null;
         }
     }
-
-
   }
 
   static function lookupSchema(name: String, map: Map<String, Expr>, typeParameters: Array<String>): Expr {
     return _lookupSchema(TypeStructure.fromString(name), map, typeParameters);
+  }
+
+  public static function makeEnumSchema<E>(e: Expr, typeSchemaMap: Map<String, Expr>) {
+    var tenum = extractTypeFromExpression(e);
+    var params = extractTypeParamsFromExpression(e);
+
+    // var typeParamsArguments = [];
+    var typeParameters = params.map(v -> TypeTools.toString(v.t));
+    // typeParamsArguments = params.map(typeToArgumentName);
+
+    var nenum = extractTypeNameFromExpression(e);
+    var list = extractEnumConstructorsFromType(tenum);
+    var constructors: Array<Expr> = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap, typeParameters));
+
+    var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
+    var inner = createFunction(
+      "_makeSchema",
+      params.map(p -> { ctype: wrapTypeInSchema(p.t), name: typeToArgumentName(p.name), opt: false }),
+      macro return thx.schema.SimpleSchema.oneOf([$a{constructors}]),
+      null,
+      ["E"].concat(params.map(v -> v.name))
+    );
+    var r = createFunction(
+      "makeSchema",
+      // DO NOT set the types of the arguments for ctype. The compiler doesn't like that
+      params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
+      macro {
+        $inner;
+        return _makeSchema($a{argNames});
+      },
+      null,
+      []
+    );
+    return r;
+  }
+
+  public static function makeClassSchema<E>(e: Expr, typeSchemaMap: Map<String, Expr>) {
+    var tclass = extractTypeFromExpression(e);
+    var sclass = extractTypeNameFromExpression(e);
+    var sclassParts = sclass.split(".");
+    var params = extractTypeParamsFromExpression(e);
+    var fields = extractFieldsFromClass(tclass).filter(keepVariables);
+    var n = fields.length;
+    var apN = 'ap$n';
+
+    var argsForProps = fields.map(field -> {
+      t: field.type,
+      name: field.name,
+      opt: false
+    });
+
+    var cargs = argsForProps.map(arg -> {
+      ctype: TypeTools.toComplexType(arg.t),
+      name: arg.name,
+      opt: false
+    });
+
+    var bodyParts = [ macro var inst = Type.createEmptyInstance($p{sclassParts}) ]
+                      .concat(cargs.map(arg -> macro Reflect.setField(inst, $v{arg.name}, $i{arg.name})))
+                      .append(macro return inst);
+    var body = macro $b{bodyParts};
+
+    var containerType = TypeTools.toComplexType(tclass);
+    var constructorF = createFunction(null, cargs, body, containerType, []);
+    var objectProperties = argsForProps.map(createProperty.bind(containerType, _, typeSchemaMap, [])); // TODO !!! Type parameters instead of []
+    var apNArgs = [constructorF].concat(objectProperties);
+
+    var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
+    var inner = createFunction(
+      "_makeSchema",
+      params.map(p -> { ctype: wrapTypeInSchema(p.t), name: typeToArgumentName(p.name), opt: false }),
+      fields.length == 0 ?
+        macro return thx.schema.SimpleSchema.object(PropsBuilder.Pure(Type.createEmptyInstance($p{sclassParts}))) :
+        macro return thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs})),
+      null,
+      ["E"].concat(params.map(v -> v.name))
+    );
+    var r = createFunction(
+      "makeSchema",
+      // DO NOT set the types of the arguments for ctype. The compiler doesn't like that
+      params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
+      macro {
+        $inner;
+        return _makeSchema($a{argNames});
+      },
+      null,
+      []
+    );
+    return r;
   }
 #end
 }
