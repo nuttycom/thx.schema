@@ -99,6 +99,7 @@ enum Case1<T1, T2> {
   L(t1: Option<String>);
   M(s: Null<String>);
   N(?s: String);
+  // O(e: Either<T1, Float>);
 
   // O<T3>(t3: Option<Array<T3>>);
 }

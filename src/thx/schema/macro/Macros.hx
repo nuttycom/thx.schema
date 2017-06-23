@@ -24,7 +24,7 @@ class Macros {
   }
 
   public static function extractTypeNameFromKind(s: String): String {
-    var pattern = ~/^(?:Enum|Class)[<](.+)[>]$/;
+    var pattern = ~/^(?:Enum|Class|Abstract)[<](.+)[>]$/;
     return if(pattern.match(s)) {
       pattern.matched(1);
     } else {
