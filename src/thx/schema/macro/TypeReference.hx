@@ -97,6 +97,13 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
       objectToString(fields);
   }
 
+  public function toStringTypeWithParameters() return switch this {
+    case Path(path):
+      path.toStringTypeWithParameters();
+    case Object(fields):
+      objectToString(fields);
+  }
+
   public function toIdentifier() return switch this {
     case Path(path): path.toIdentifier();
     case Object(fields):
@@ -108,8 +115,40 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
       '__Anonymous__$id';
   }
 
-  static function objectToString(fields)
+  public function parameters(): Array<String>
+    return switch this {
+      case Path(p): p.params;
+      case Object(_): [];
+    };
+
+  static function objectToString(fields: Array<Field>)
     return '{ ${fields.map(field -> field.toString()).join(", ")} }';
+
+  public function asComplexType(): ComplexType {
+    return switch this {
+      case Path(p): p.asComplexType();
+      case Object(f): fieldsToComplexType(f);
+    };
+  }
+
+  static function fieldsToComplexType(fields: Array<Field>): ComplexType {
+    return TAnonymous(fields.map(field -> {
+      pos: Context.currentPos(),
+      name: field.name,
+      meta: null,
+      kind: FieldType.FVar(field.type.asComplexType(), null),
+      doc: null,
+      access: null,
+    }));
+  }
+
+  public static function paramAsComplexType(p: String): ComplexType {
+    return TPath({
+      pack: [],
+      name: p,
+      params: []
+    });
+  }
 }
 
 enum TypeReferenceImpl {
@@ -161,6 +200,21 @@ class Path {
   public function toString()
     return parts().join(".");
 
+  public function toStringTypeWithParameters()
+    return toString() + if(hasParams()) {
+      "<" + params.join(", ") + ">";
+    } else {
+      "";
+    }
+
   public function toIdentifier()
     return parts().join("_").upperCaseFirst();
+
+  public function asComplexType(): ComplexType
+    return TPath({
+      pack: pack,
+      name: module,
+      sub: type,
+      params: params.map(TypeReference.paramAsComplexType).map(TPType)
+    });
 }

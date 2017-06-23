@@ -15,15 +15,23 @@ class TestGeneric {
   public function new() {}
 
   public function testArguments() {
-    var f = schema(thx.Either);
-    trace(f());
     var f = schema(String);
+    $type(f);
     var f = schema(G);
+    $type(f);
+    var f = schema(thx.Either);
+    $type(f);
+    trace(f());
     var f = schema(thx.Tuple.Tuple2);
+    $type(f);
     var f = schema({ name : String, age : Int });
+    $type(f);
     var f = schema({ age : Int, name : String });
+    $type(f);
     var f = schema({ wineName : String, age : Int });
+    $type(f);
     var f = schema({ name : String, age : Int });
+    $type(f);
   }
 }
 

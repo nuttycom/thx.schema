@@ -3,7 +3,7 @@ package thx.schema;
 #if macro
 import haxe.macro.Expr;
 import thx.schema.macro.Arguments;
-import thx.schema.macro.Generator;
+import thx.schema.macro.TypeBuilder;
 #end
 
 class Generic {
@@ -21,7 +21,7 @@ class Generic {
     if(args.typeSchemas.exists(typename))
       return args.typeSchemas.get(typename);
 
-    var path = Generator.ensure(args.typeRef, args.typeSchemas);
+    var path = TypeBuilder.ensure(args.typeRef, args.typeSchemas);
     return macro $p{path};
   }
 }

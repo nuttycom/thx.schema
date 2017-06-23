@@ -2,9 +2,10 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
 using thx.Arrays;
 
-class Generator {
+class TypeBuilder {
   static var generatedPath = ["thx", "schema", "generated"];
 
   public static function getModuleName(identifier: String): String
@@ -27,17 +28,46 @@ class Generator {
   }
 
   static function generateSchemaField(typeReference: TypeReference, typeSchemas: Map<String, Expr>): Field {
+    var schema = SchemaBuilder.generateSchema(typeReference, typeSchemas);
     return {
       access: [APublic, AStatic],
       pos: Context.currentPos(),
       name: "schema",
       kind: FFun({
-        args: [], // TODO !!!
-        expr: macro return "HI", // TODO !!!
-        params: [], // TODO !!!
-        ret: null // TODO !!!
+        args: argsFromTypeReference(typeReference),
+        expr: macro return $schema,
+        params: paramsFromTypeReference(typeReference),
+        ret: returnFromTypeReference(typeReference),
       }),
     };
+  }
+
+  static function argsFromTypeReference(typeReference: TypeReference) {
+    return typeReference.parameters().map(p -> {
+      value: null,
+      type: TypeReference.paramAsComplexType(p),
+      opt: false,
+      name: SchemaBuilder.variableNameFromTypeParameter(p),
+      meta: null,
+    });
+  }
+
+  static function paramsFromTypeReference(typeReference: TypeReference) {
+    return paramNamesFromTypeReference(typeReference).map(p -> {
+      params: null,
+      name: p,
+      meta: null,
+      constraints: null
+    });
+  }
+
+  static function paramNamesFromTypeReference(typeReference: TypeReference) {
+    return ["E"].concat(typeReference.parameters());
+  }
+
+  static function returnFromTypeReference(typeReference: TypeReference): ComplexType {
+    var type = typeReference.asComplexType();
+    return macro : thx.schema.SimpleSchema.Schema<E, $type>;
   }
 
   public static var generated = [];
