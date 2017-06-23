@@ -11,10 +11,10 @@ class Generic {
     var args = Arguments.parseArguments(exprs);
 
     // TODO !!! remove
-    trace("-------------------------------------------\n");
-    trace("typeRef:    " + args.typeRef.toString());
-    trace("identifier: " + args.typeRef.toIdentifier());
-    trace("\n");
+    // trace("-------------------------------------------\n");
+    // trace("typeRef:    " + args.typeRef.toString());
+    // trace("identifier: " + args.typeRef.toIdentifier());
+    // trace("\n");
     // END REMOVE
 
     var typename = args.typeRef.toString();

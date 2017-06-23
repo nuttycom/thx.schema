@@ -3,7 +3,6 @@ package thx.schema.macro;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.ExprTools;
-import haxe.macro.TypeTools;
 using thx.Arrays;
 
 class TypeBuilder {
@@ -29,12 +28,11 @@ class TypeBuilder {
   }
 
   static function generateSchemaField(typeReference: TypeReference, typeSchemas: Map<String, Expr>): Field {
-    addTypeParametersToTypeSchemas(typeReference, typeSchemas);
+    trace(schemaArgsFromTypeReference(typeReference));
+    trace(paramsFromTypeReference(typeReference));
+    trace(returnFromTypeReference(typeReference));
     var schema = SchemaBuilder.generateSchema(typeReference, typeSchemas);
-    // trace(schemaArgsFromTypeReference(typeReference));
-    // trace(paramsFromTypeReference(typeReference));
-    // trace(ExprTools.toString(schema));
-    // trace(returnFromTypeReference(typeReference));
+    trace(ExprTools.toString(schema));
     return {
       access: [APublic, AStatic],
       pos: Context.currentPos(),
@@ -46,20 +44,6 @@ class TypeBuilder {
         ret: returnFromTypeReference(typeReference),
       }),
     };
-  }
-
-  static function addTypeParametersToTypeSchemas(typeReference: TypeReference, typeSchemas: Map<String, Expr>) {
-    // TODO this mixing is maybe not correct because it propagates to schemas generated as side effects
-    var base = typeReference.toString();
-    var params = typeReference.parameters().map(function(p) {
-      var n = variableNameFromTypeParameter(p);
-      return {
-        type: '$base.$p',
-        expr: macro $i{n}
-      };
-    });
-
-    params.each(p -> typeSchemas.set(p.type, p.expr));
   }
 
   static function schemaArgsFromTypeReference(typeReference: TypeReference) {

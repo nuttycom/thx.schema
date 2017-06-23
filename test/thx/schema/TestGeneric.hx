@@ -70,6 +70,16 @@ class TestGeneric {
     roundTripSchema(new ClassWithTypeParameters("aaa", 0.123, 7), sf(string(), float()));
   }
 
+  // public function testRecursiveClass() {
+  //   var sf = schema(RecursiveClass);
+  //   roundTripSchema(
+  //     new RecursiveClass(
+  //       Some(new RecursiveClass(None, 6)),
+  //       7),
+  //     sf(int())
+  //   );
+  // }
+
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
     var r: T = schema.renderDynamic(v);
     // trace(r);

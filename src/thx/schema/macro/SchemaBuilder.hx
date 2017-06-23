@@ -2,7 +2,6 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
@@ -31,21 +30,19 @@ class SchemaBuilder {
   }
 
   static function generateClassSchema(cls: ClassType, classPath: Path, typeSchemas: Map<String, Expr>) {
-    // generate constructor function
-    // TODO
     var fields = cls.fields.get();
     var n = fields.length;
     return if(n == 0) {
       var path = classPath.parts();
       macro thx.schema.SimpleSchema.object(PropsBuilder.Pure(Type.createEmptyInstance($p{path})));
     } else {
+      // generate constructor function
       var constructor = generateClassConstructorF(fields.map(classFieldToFunctionArgument), classPath);
       // generate fields
       var properties = fields.map(createPropertyFromClassField.bind(classPath, typeSchemas, _));
-      // capture apN
-      var apNArgs = [constructor].concat(properties);
+      // capture apN and ap arguments
       var apN = 'ap$n';
-
+      var apNArgs = [constructor].concat(properties);
       // return schema
       var body = macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
       body;
@@ -112,6 +109,7 @@ class SchemaBuilder {
   static function createPropertyFromClassField(classPath: Path, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
     var argType = TypeReference.fromType(cf.type),
         argName = cf.name;
+    trace(argType.parameters());
     return createProperty(classPath, argType, argName, typeSchemas);
   }
 
@@ -120,12 +118,8 @@ class SchemaBuilder {
     var schema = lookupSchema(argType, typeSchemas),
         containerType = classPath.asComplexType(),
         type = argType.asComplexType();
-    // var schema = lookupSchema(TypeTools.toString(arg.t), map),
-    //     field = arg.name,
-    //     type = TypeTools.toComplexType(arg.t);
-    // // TODO inspect $schema to see if it is an Option, in that case unwrap and use `optional`
+
     return macro thx.schema.SchemaDSL.required($v{argName}, $schema, function(v : $containerType): $type return Reflect.field(v, $v{argName}));
-    // return macro null;
   }
 }
 
