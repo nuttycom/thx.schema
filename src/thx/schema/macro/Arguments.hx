@@ -1,11 +1,9 @@
 package thx.schema.macro;
 
-import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
 import thx.schema.macro.Error.*;
 import haxe.ds.Option;
-using thx.Options;
+using thx.Strings;
 
 class Arguments {
   /**
@@ -16,61 +14,46 @@ class Arguments {
    */
   public static function parseArguments(exprs: Array<Expr>) {
     var typeRef = null,
-        typeSchemas = new Map(),
-        identifier = null;
+        typeSchemas = new Map();
 
     if(exprs.length == 0)
       fatal('this method requires at least one argument that identifies a type whose schema needs to be generated');
-    if(exprs.length > 3)
-      fatal('this method takes at most 3 arguments');
+    if(exprs.length > 2)
+      fatal('this method takes at most 2 arguments');
 
     typeRef = TypeReference.fromExpr(exprs[0]);
 
-    if(exprs.length == 1) {
-      identifier = typeRef.toIdentifier();
-    } else if(exprs.length == 2) {
-      switch exprToTypeSchemas(exprs[1]) {
-        case Some(schemas):
-          typeSchemas = schemas;
-          identifier = typeRef.toIdentifier();
-        case None:
-          switch exprToIdentifier(exprs[1]) {
-            case Some(id):
-              identifier = id;
-            case None:
-              fatal('the second argument is optional and can be either a list of schemas or an identiefier');
-          }
-      }
-    } else if(exprs.length == 3) {
+    if(exprs.length == 2) {
       switch exprToTypeSchemas(exprs[1]) {
         case Some(schemas):
           typeSchemas = schemas;
         case None:
-          fatal('the second argument should be a list of schemas');
-      }
-      switch exprToIdentifier(exprs[2]) {
-        case Some(id):
-          identifier = id;
-        case None:
-          fatal('the third argument should be an identiefier');
+          fatal('the second argument is optional, when provided it needs to be a list of schemas');
       }
     }
 
+    var map: Map<String, Expr> = new Map();
+    thx.Maps.merge(map, [defaultTypeSchemas, typeSchemas]);
+
     return {
       typeRef: typeRef,
-      typeSchemas: typeSchemas,
-      identifier: identifier
+      typeSchemas: map
     };
   }
+
+  // TODO !!! allow registering new types?
+  static var defaultTypeSchemas = [
+    "String" => macro thx.schema.SimpleSchema.string,
+    "Bool" => macro thx.schema.SimpleSchema.bool,
+    "Float" => macro thx.schema.SimpleSchema.float,
+    "Int" => macro thx.schema.SimpleSchema.int,
+    "Array" => macro thx.schema.SimpleSchema.array,
+    // "thx.Either" => macro thx.schema.SimpleSchema.core.either,
+    "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
+    "Null" => macro thx.schema.SimpleSchema.makeNullable
+  ];
 
   static function exprToTypeSchemas(expr: Expr): Option<Map<String, Expr>> {
     return None; // TODO !!!
-  }
-
-  static function exprToIdentifier(expr: Expr): Option<String> {
-    return switch expr.expr {
-      case EConst(CIdent(ident)): Some(ident);
-      case _: None;
-    };
   }
 }

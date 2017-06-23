@@ -16,9 +16,14 @@ class TestGeneric {
 
   public function testArguments() {
     var f = schema(thx.Either);
+    trace(f());
+    var f = schema(String);
     var f = schema(G);
     var f = schema(thx.Tuple.Tuple2);
-    var f = schema({ name : String, age : Int }, person);
+    var f = schema({ name : String, age : Int });
+    var f = schema({ age : Int, name : String });
+    var f = schema({ wineName : String, age : Int });
+    var f = schema({ name : String, age : Int });
   }
 }
 

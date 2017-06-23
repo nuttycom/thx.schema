@@ -5,7 +5,6 @@ import haxe.ds.Option;
 import thx.Functions;
 import thx.Unit;
 import thx.Functions.identity;
-import thx.fp.Functions.const;
 using thx.Bools;
 
 import thx.schema.SchemaF;

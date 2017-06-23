@@ -8,6 +8,7 @@ import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 using thx.Options;
+using thx.Strings;
 
 abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenceImpl {
   public static function fromExpr(expr: Expr) {
@@ -104,7 +105,7 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
         anonymMap.set(key, ++nextId);
       }
       var id = anonymMap.get(key);
-      '__anonymous__$id';
+      '__Anonymous__$id';
   }
 
   static function objectToString(fields)
@@ -161,5 +162,5 @@ class Path {
     return parts().join(".");
 
   public function toIdentifier()
-    return parts().join("_");
+    return parts().join("_").upperCaseFirst();
 }
