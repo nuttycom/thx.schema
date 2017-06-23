@@ -43,10 +43,10 @@ class Arguments {
 
   // TODO !!! allow registering new types?
   static var defaultTypeSchemas = [
-    "String" => macro thx.schema.SimpleSchema.string,
-    "Bool" => macro thx.schema.SimpleSchema.bool,
-    "Float" => macro thx.schema.SimpleSchema.float,
-    "Int" => macro thx.schema.SimpleSchema.int,
+    "String" => macro thx.schema.SimpleSchema.string(),
+    "Bool" => macro thx.schema.SimpleSchema.bool(),
+    "Float" => macro thx.schema.SimpleSchema.float(),
+    "Int" => macro thx.schema.SimpleSchema.int(),
     "Array" => macro thx.schema.SimpleSchema.array,
     // "thx.Either" => macro thx.schema.SimpleSchema.core.either,
     "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,

@@ -45,13 +45,23 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
   }
 
   static function fromEnumType(t: EnumType): TypeReference
-    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), TKEnum));
+    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), false));
 
-  static function fromClassType(t: ClassType): TypeReference
-    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), TKEnum));
+  static function fromClassType(t: ClassType): TypeReference {
+    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), false));
+  }
+
+  static function fromClassTypeParameter(t: ClassType): TypeReference {
+    // trace("TINST pack: " + t.pack, "module: " + t.module, "name: " + t.name, "params: " + t.params.map(p -> p.name));
+    var parts = t.module.split(".");
+    var pack = t.pack.copy();
+    var module = parts.pop() + "." + pack.pop();
+    var type = t.name;
+    return Path(new Path(pack, module, type, [], true));
+  }
 
   static function fromAbstractType(t: AbstractType): TypeReference
-    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), TKEnum));
+    return Path(new Path(t.pack, t.module, t.name, t.params.map(p -> p.name), false));
 
   static function fromAnonType(t: AnonType): TypeReference {
     var fields = t.fields.map(field -> new Field(field.name, fromType(field.type)));
@@ -70,7 +80,12 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
       case TEnum(_.get() => t, p):
         Some(fromEnumType(t));
       case TInst(_.get() => t, p):
-        Some(fromClassType(t));
+        switch t.kind {
+          case KTypeParameter(_):
+            Some(fromClassTypeParameter(t));
+          case _:
+            Some(fromClassType(t));
+        }
       case TAbstract(_.get() => t, p):
         Some(fromAbstractType(t));
       case TAnonymous(_.get() => t):
@@ -124,6 +139,13 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
   static function objectToString(fields: Array<Field>)
     return '{ ${fields.map(field -> field.toString()).join(", ")} }';
 
+  public function asType(): Type {
+    return switch this {
+      case Path(p): p.asType();
+      case Object(f): fieldsToType(f);
+    };
+  }
+
   public function asComplexType(): ComplexType {
     return switch this {
       case Path(p): p.asComplexType();
@@ -132,7 +154,7 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
   }
 
   static function fieldsToComplexType(fields: Array<Field>): ComplexType {
-    return TAnonymous(fields.map(field -> {
+    return ComplexType.TAnonymous(fields.map(field -> {
       pos: Context.currentPos(),
       name: field.name,
       meta: null,
@@ -140,6 +162,24 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
       doc: null,
       access: null,
     }));
+  }
+
+  static function fieldsToType(fields: Array<Field>): Type {
+    return Type.TAnonymous(createRef({
+      fields: [], // TODO
+      status: AClosed
+    }));
+  }
+
+  static function createRef<T>(t: T): Ref<T> {
+    return {
+      get: function (): T {
+        return t;
+      },
+      toString: function (): String {
+        return Std.string(t);
+      }
+    };
   }
 
   public static function paramAsComplexType(p: String): ComplexType {
@@ -177,24 +217,44 @@ class Field {
     return '$name: ${type.toString()}';
 }
 
-enum TypeKind {
-  TKEnum;
-  TKClass;
-  TKAbstract;
-}
+// TODO REMOVE???
+// enum TypeKind {
+//   TKEnum;
+//   TKClass;
+//   TKAbstract;
+// }
+
+// class TypeParemter {
+//   public var module: String;
+//   public var pack: Array<String>;
+//   public var type: String;
+//   public var paramter: Stirng;
+//   public function new(pack: Array<String>, module: String, type: String, parameter: String) {
+//     this.pack = pack;
+//     this.module = module.split(".").pop();
+//     this.type = type;
+//     this.params = params;
+//     this.paramter = parameter;
+//   }
+// }
 
 class Path {
   public var module: String;
   public var pack: Array<String>;
   public var type: String;
   public var params: Array<String>;
-  public var typeKind: TypeKind;
-  public function new(pack: Array<String>, module: String, type: String, params: Array<String>, typeKind: TypeKind) {
+  // public var typeKind: TypeKind;
+  public var isTypeParamter: Bool;
+  public function new(pack: Array<String>, module: String, type: String, params: Array<String>, isTypeParamter: Bool/*, typeKind: TypeKind*/) {
     this.pack = pack;
-    this.module = module.split(".").pop();
+    if(isTypeParamter)
+      this.module = module; // TODO magic
+    else
+      this.module = module.split(".").pop();
     this.type = type;
     this.params = params;
-    this.typeKind = typeKind;
+    this.isTypeParamter = isTypeParamter;
+    // this.typeKind = typeKind;
   }
 
   public function hasParams()
@@ -203,8 +263,9 @@ class Path {
   public function countParams()
     return params.length;
 
-  function parts()
-    return pack.concat(module != type && module != "StdTypes" ? [module] : []).concat([type]);
+  public function parts() {
+    return pack.concat(module != type && module != "StdTypes" ? [module, type] : [type]);
+  }
 
   public function toString()
     return parts().join(".");
@@ -219,11 +280,23 @@ class Path {
   public function toIdentifier()
     return parts().join("_").upperCaseFirst();
 
-  public function asComplexType(): ComplexType
-    return TPath({
-      pack: pack,
-      name: module,
-      sub: type,
-      params: params.map(TypeReference.paramAsComplexType).map(TPType)
-    });
+  public function asType(): Type
+    return Context.getType(toString());
+
+  public function asComplexType(): ComplexType {
+    if(isTypeParamter) {
+      return TPath({
+        pack: [],
+        name: type,
+        params: []
+      });
+    } else {
+      return TPath({
+        pack: pack,
+        name: module,
+        sub: type,
+        params: params.map(TypeReference.paramAsComplexType).map(TPType)
+      });
+    }
+  }
 }

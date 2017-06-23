@@ -2,6 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.ExprTools;
 import haxe.macro.TypeTools;
 using thx.Arrays;
 
@@ -28,13 +29,18 @@ class TypeBuilder {
   }
 
   static function generateSchemaField(typeReference: TypeReference, typeSchemas: Map<String, Expr>): Field {
+    addTypeParametersToTypeSchemas(typeReference, typeSchemas);
     var schema = SchemaBuilder.generateSchema(typeReference, typeSchemas);
+    // trace(schemaArgsFromTypeReference(typeReference));
+    // trace(paramsFromTypeReference(typeReference));
+    // trace(ExprTools.toString(schema));
+    // trace(returnFromTypeReference(typeReference));
     return {
       access: [APublic, AStatic],
       pos: Context.currentPos(),
       name: "schema",
       kind: FFun({
-        args: argsFromTypeReference(typeReference),
+        args: schemaArgsFromTypeReference(typeReference),
         expr: macro return $schema,
         params: paramsFromTypeReference(typeReference),
         ret: returnFromTypeReference(typeReference),
@@ -42,13 +48,31 @@ class TypeBuilder {
     };
   }
 
-  static function argsFromTypeReference(typeReference: TypeReference) {
-    return typeReference.parameters().map(p -> {
-      value: null,
-      type: TypeReference.paramAsComplexType(p),
-      opt: false,
-      name: SchemaBuilder.variableNameFromTypeParameter(p),
-      meta: null,
+  static function addTypeParametersToTypeSchemas(typeReference: TypeReference, typeSchemas: Map<String, Expr>) {
+    // TODO this mixing is maybe not correct because it propagates to schemas generated as side effects
+    var base = typeReference.toString();
+    var params = typeReference.parameters().map(function(p) {
+      var n = variableNameFromTypeParameter(p);
+      return {
+        type: '$base.$p',
+        expr: macro $i{n}
+      };
+    });
+
+    params.each(p -> typeSchemas.set(p.type, p.expr));
+  }
+
+  static function schemaArgsFromTypeReference(typeReference: TypeReference) {
+    return typeReference.parameters().map(function(p) {
+      var type = TypeReference.paramAsComplexType(p);
+      var schemaType = macro : thx.schema.SimpleSchema.Schema<E, $type>;
+      return {
+        value: null,
+        type: schemaType,
+        opt: false,
+        name: variableNameFromTypeParameter(p),
+        meta: null,
+      };
     });
   }
 
@@ -82,4 +106,7 @@ class TypeBuilder {
     }
     return getPath(identifier);
   }
+
+  public static function variableNameFromTypeParameter(p: String)
+    return 'schema$p';
 }
