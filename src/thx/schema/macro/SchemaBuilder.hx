@@ -29,7 +29,7 @@ class SchemaBuilder {
     }
   }
 
-  static function generateClassSchema(cls: ClassType, classPath: Path, typeSchemas: Map<String, Expr>) {
+  static function generateClassSchema(cls: ClassType, classPath: NamedType, typeSchemas: Map<String, Expr>) {
     var fields = cls.fields.get();
     var n = fields.length;
     return if(n == 0) {
@@ -57,7 +57,7 @@ class SchemaBuilder {
     };
   }
 
-  static function generateClassConstructorF(args: Array<FunctionArgument>, classPath: Path) {
+  static function generateClassConstructorF(args: Array<FunctionArgument>, classPath: NamedType) {
     var path = classPath.parts(),
         bodyParts = [
             macro var inst = Type.createEmptyInstance($p{path})
@@ -67,15 +67,15 @@ class SchemaBuilder {
     return createFunction("createInstance" + classPath.toIdentifier(), args, macro $b{bodyParts}, classPath.asComplexType(), []);
   }
 
-  static function generateEnumSchema(enm: EnumType, typeReference: Path, typeSchemas: Map<String, Expr>) {
+  static function generateEnumSchema(enm: EnumType, typeReference: NamedType, typeSchemas: Map<String, Expr>) {
     return macro null; // TODO
   }
 
-  static function generateAbstractSchema(abs: AbstractType, typeReference: Path, typeSchemas: Map<String, Expr>) {
+  static function generateAbstractSchema(abs: AbstractType, typeReference: NamedType, typeSchemas: Map<String, Expr>) {
     return macro null; // TODO
   }
 
-  static function generateAnonSchema(anon: AnonType, typeReference: Array<Field>, typeSchemas: Map<String, Expr>) {
+  static function generateAnonSchema(anon: AnonType, typeReference: Array<ObjectField>, typeSchemas: Map<String, Expr>) {
     return macro null; // TODO
   }
 
@@ -106,7 +106,7 @@ class SchemaBuilder {
     };
   }
 
-  static function createPropertyFromClassField(classPath: Path, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
+  static function createPropertyFromClassField(classPath: NamedType, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
     var argType = TypeReference.fromType(cf.type),
         argName = cf.name;
     trace(argType.parameters());
@@ -114,7 +114,7 @@ class SchemaBuilder {
   }
 
   // static function createProperty(classPath: ComplexType, map: Map<String, Expr>, arg: {t:Type, opt:Bool, name:String}): Expr {
-  static function createProperty(classPath: Path, argType: TypeReference, argName: String, typeSchemas: Map<String, Expr>): Expr {
+  static function createProperty(classPath: NamedType, argType: TypeReference, argName: String, typeSchemas: Map<String, Expr>): Expr {
     var schema = lookupSchema(argType, typeSchemas),
         containerType = classPath.asComplexType(),
         type = argType.asComplexType();
