@@ -14,7 +14,7 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
   public static function fromExpr(expr: Expr) {
     return switch Context.typeof(expr) {
       case TType(_.get() => kind, p):
-        var nameFromKind = Macros.extractTypeNameFromKind(kind.name);
+        var nameFromKind = extractTypeNameFromKind(kind.name);
         switch fromTypeName(nameFromKind) {
           case Some(typeReference):
             typeReference;
@@ -29,7 +29,7 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
         }
       case TAnonymous(_.get() => t):
         var fields = t.fields.map(function(field) {
-          var nameFromKind = Macros.extractTypeNameFromKind(TypeTools.toString(field.type));
+          var nameFromKind = extractTypeNameFromKind(TypeTools.toString(field.type));
           var type = switch fromTypeName(nameFromKind) {
             case Some(typeReference):
               typeReference;
@@ -148,6 +148,15 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
       name: p,
       params: []
     });
+  }
+
+  public static function extractTypeNameFromKind(s: String): String {
+    var pattern = ~/^(?:Enum|Class|Abstract)[<](.+)[>]$/;
+    return if(pattern.match(s)) {
+      pattern.matched(1);
+    } else {
+      fatal("Unable to extract type name from kind: " + s);
+    }
   }
 }
 
