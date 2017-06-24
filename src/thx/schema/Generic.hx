@@ -17,11 +17,11 @@ class Generic {
     // trace("\n");
     // END REMOVE
 
-    var typename = args.typeRef.toString();
+    var typename = args.typeSchema.toString();
     if(args.typeSchemas.exists(typename))
       return args.typeSchemas.get(typename);
 
-    var path = TypeBuilder.ensure(args.typeRef, args.typeSchemas);
+    var path = TypeBuilder.ensure(args.typeSchema, args.typeSchemas);
     return macro $p{path};
   }
 }

@@ -14,7 +14,7 @@ class Arguments {
    *  @param ?identifier
    */
   public static function parseArguments(exprs: Array<Expr>) {
-    var typeRef = null,
+    var typeSchema  = null,
         typeSchemas = new Map();
 
     if(exprs.length == 0)
@@ -24,7 +24,7 @@ class Arguments {
 
     // here are passed things like Option or Either that gets interpreted as Option<T> or Either<L, R>
     // but also objects in the form of { field: Array<Option<String>> } which are very concrete and nested types
-    typeRef = TypeReference.fromExpr(exprs[0]);
+    typeSchema = UnboundSchemaType.fromExpr(exprs[0]);
 
     if(exprs.length == 2) {
       switch exprToTypeSchemas(exprs[1]) {
@@ -39,7 +39,7 @@ class Arguments {
     thx.Maps.merge(map, [defaultTypeSchemas, typeSchemas]);
 
     return {
-      typeRef: typeRef,
+      typeSchema: typeSchema,
       typeSchemas: map
     };
   }
