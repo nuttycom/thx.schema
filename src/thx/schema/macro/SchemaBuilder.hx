@@ -9,6 +9,7 @@ import thx.schema.macro.TypeReference;
 using thx.Arrays;
 
 class SchemaBuilder {
+  // here are passed things like Option<Array<A>> or Either<Option<String>> where A is a type paramter of the container schema
   public static function lookupSchema(typeReference: TypeReference, typeSchemas: Map<String, Expr>): Expr {
     var type = typeReference.toString();
     if(typeSchemas.exists(type)) {

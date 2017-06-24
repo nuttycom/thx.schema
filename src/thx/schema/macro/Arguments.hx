@@ -2,6 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Expr;
 import thx.schema.macro.Error.*;
+import thx.schema.macro.Types;
 import haxe.ds.Option;
 using thx.Strings;
 
@@ -21,6 +22,8 @@ class Arguments {
     if(exprs.length > 2)
       fatal('this method takes at most 2 arguments');
 
+    // here are passed things like Option or Either that gets interpreted as Option<T> or Either<L, R>
+    // but also objects in the form of { field: Array<Option<String>> } which are very concrete and nested types
     typeRef = TypeReference.fromExpr(exprs[0]);
 
     if(exprs.length == 2) {

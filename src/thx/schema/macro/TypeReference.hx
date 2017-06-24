@@ -51,7 +51,7 @@ abstract TypeReference(TypeReferenceImpl) from TypeReferenceImpl to TypeReferenc
     return Path(new NamedType(t.pack, t.module, t.name, t.params.map(p -> p.name), false));
   }
 
-static function fromClassTypeParameter(t: ClassType): TypeReference {
+  static function fromClassTypeParameter(t: ClassType): TypeReference {
     // trace("TINST pack: " + t.pack, "module: " + t.module, "name: " + t.name, "params: " + t.params.map(p -> p.name));
     var parts = t.module.split(".");
     var pack = t.pack.copy();

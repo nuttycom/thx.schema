@@ -66,8 +66,13 @@ class TestGeneric {
   // }
 
   public function testClassWithTypeParameters() {
-    var sf = schema(ClassWithTypeParameters);
-    roundTripSchema(new ClassWithTypeParameters("aaa", 0.123, 7), sf(string(), float()));
+    // var sf = schema(ClassWithTypeParameters);
+    // roundTripSchema(new ClassWithTypeParameters("aaa", 0.123, 7), sf(string(), float()));
+  }
+
+  public function testBasicType() {
+    var sf = schema(Int);
+    roundTripSchema(7, sf);
   }
 
   // public function testRecursiveClass() {
