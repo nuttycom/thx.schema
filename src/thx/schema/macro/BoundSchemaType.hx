@@ -37,7 +37,7 @@ class BoundSchemaType {
       case TEnum(_.get() => t, p):
         fromEnumType(t, p);
       case TInst(_.get() => t, p):
-        fromClassType(t);
+        fromClassType(t, p);
       case TAbstract(_.get() => t, p):
         fromAbstractType(t);
       case TAnonymous(_.get() => t):
@@ -51,13 +51,12 @@ class BoundSchemaType {
     return createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)));
   }
 
-  // TODO !!!
-  static function fromClassType(t: ClassType): BoundSchemaType {
+  static function fromClassType(t: ClassType, p: Array<Type>): BoundSchemaType {
     return switch t.kind {
       case KTypeParameter(_):
         createLocalParam(t.name);
       case _:
-        createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> fromType(p.t))));
+        createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(t -> fromType(t))));
     }
   }
 

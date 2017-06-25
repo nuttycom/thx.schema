@@ -2,6 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
@@ -56,7 +57,7 @@ class SchemaBuilder {
       // generate constructor function
       var constructor = generateClassConstructorF(fields.map(classFieldToFunctionArgument), qtype);
       // generate fields
-      var properties = fields.map(createPropertyFromClassField.bind(qtype, typeSchemas, _));
+      var properties = fields.map(createPropertyFromClassField.bind(BoundSchemaType.createQualified(qtype), typeSchemas, _));
       // capture apN and ap arguments
       var apN = 'ap$n';
       var apNArgs = [constructor].concat(properties);
@@ -84,8 +85,117 @@ class SchemaBuilder {
     return createFunction("createInstance" + qtype.toIdentifier(), args, macro $b{bodyParts}, qtype.toComplexType(b -> b.toComplexType()), []);
   }
 
+  static function generateEnumConstructor(name: String, constructor: EnumField, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
+    var cons = schemaType.parts().concat([constructor.name]);
+    // trace(constructor);
+    return switch constructor.type {
+      case TEnum(_):
+        macro thx.schema.SimpleSchema.constEnum($v{name}, $p{cons});
+      case TFun(args, returnType):
+        var n = args.length;
+        var apN = 'ap$n';
+        var container = thx.schema.macro.AnonObject.fromEnumArgs(args);
+        var containerType = container.toComplexType();
+        var complexType = schemaType.toComplexType(f -> f.toComplexType());
+        var object = container.toSetterObject();
+        var cargs = args.map(arg -> {
+              ctype: TypeTools.toComplexType(arg.t),
+              name: arg.name,
+              opt: arg.opt
+            });
+        var constructorF = createFunction(null, cargs, macro return $object, containerType, []);
+        // static function createProperty(qtype: QualifiedType<BoundSchemaType>, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {
+        var objectProperties = container.fields.map(f -> createProperty(BoundSchemaType.createAnon(container), f.type, f.name, typeSchemas));
+        var apNArgs = [constructorF].concat(objectProperties);
+        var enumArgs = args.map(a -> a.name).map(n -> macro v.$n);
+        var destructured = args.map(a -> a.name).map(n -> macro $i{n});
+        var body = macro thx.schema.SimpleSchema.alt(
+          $v{name},
+          thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs})),
+          function(v: $containerType): $complexType return $p{cons}($a{enumArgs}),
+          function(v: $complexType): haxe.ds.Option<$containerType> return switch v {
+            case $p{cons}($a{destructured}): Some($object);
+            case _: None;
+          }
+        );
+        // trace(ExprTools.toString(body));
+        body;
+      case _:
+        fatal('unable to match correct type for enum constructor: ${constructor}');
+    };
+/*
+    var ctype = TypeTools.toComplexType(Context.getType(type));
+    return switch item.field.type {
+      case TFun(args, returd):
+        var n = args.length,
+            apN = 'ap$n',
+            containerType = createAnonymTypeFromArgs(args),
+            object = createSetObject(args),
+            cargs = args.map(arg -> {
+              ctype: TypeTools.toComplexType(arg.t),
+              name: arg.name,
+              opt: arg.opt
+            }),
+            constructorF = createFunction(null, cargs, createReturn(object), containerType, []),
+            objectProperties = args.map(createProperty.bind(containerType, _, providedSchemas)),
+            apNArgs = [constructorF].concat(objectProperties),
+            enumArgs = args.map(a -> a.name).map(n -> macro v.$n),
+            destructured = args.map(a -> a.name).map(n -> macro $i{n});
+        var r = macro thx.schema.SimpleSchema.alt(
+          $v{item.name},
+          thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs})),
+          function(v: $containerType): $ctype return $p{cons}($a{enumArgs}),
+          function(v: $ctype): haxe.ds.Option<$containerType> return switch v {
+            case $p{cons}($a{destructured}): Some($object);
+            case _: None;
+          }
+        );
+        r;
+      case _:
+        Context.error("unable to match correct type for enum constructor: " + item.field, Context.currentPos());
+    }
+*/
+  }
+
   static function generateEnumSchema(enm: EnumType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    return macro null; // TODO
+    var constructors: Array<Expr> = enm.names.map(name -> generateEnumConstructor(name, enm.constructs.get(name), schemaType, typeSchemas));
+    var body = macro thx.schema.SimpleSchema.oneOf([$a{constructors}]);
+    // trace(ExprTools.toString(body));
+    return body;
+/*
+    var tenum = extractTypeFromExpression(e);
+    var params = extractTypeParamsFromExpression(e);
+
+    // push all types to map
+    params.map(v -> TypeTools.toString(v.t)).each(name -> {
+      var n = typeToArgumentName(name);
+      typeSchemaMap.set(name, macro $i{n});
+    });
+
+    var nenum = extractTypeNameFromExpression(e);
+    var list = extractEnumConstructorsFromType(tenum);
+    var constructors: Array<Expr> = list.map(constructEnumConstructorExpression.bind(nenum, _, typeSchemaMap));
+
+    var argNames = params.map(p -> typeToArgumentName(p.name)).map(a -> macro $i{a});
+    var inner = createFunction(
+      "_makeSchema",
+      params.map(p -> { ctype: wrapTypeInSchema(p.t), name: typeToArgumentName(p.name), opt: false }),
+      macro return thx.schema.SimpleSchema.oneOf([$a{constructors}]),
+      null,
+      ["E"].concat(params.map(v -> v.name))
+    );
+    var r = createFunction(
+      "makeSchema",
+      // DO NOT set the types of the arguments for ctype. The compiler doesn't like that
+      params.map(p -> { ctype: null, name: typeToArgumentName(p.name), opt: false }),
+      macro {
+        $inner;
+        return _makeSchema($a{argNames});
+      },
+      null,
+      []
+    );
+*/
   }
 
   static function generateAbstractSchema(abs: AbstractType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
@@ -123,7 +233,7 @@ class SchemaBuilder {
     };
   }
 
-  static function createPropertyFromClassField(qtype: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
+  static function createPropertyFromClassField(qtype: BoundSchemaType, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
     var argType = BoundSchemaType.fromType(cf.type);
     var argName = cf.name;
     return createProperty(qtype, argType, argName, typeSchemas);
@@ -140,9 +250,9 @@ class SchemaBuilder {
       };
   }
 
-  static function createProperty(qtype: QualifiedType<BoundSchemaType>, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {
+  static function createProperty(qtype: BoundSchemaType, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {
     var schema = resolveSchema(argType, typeSchemas),
-        containerType = qtype.toComplexType(f -> f.toComplexType()),
+        containerType = qtype.toComplexType(),
         type = argType.toComplexType();
     return macro thx.schema.SchemaDSL.required($v{argName}, $schema, (v : $containerType) -> (Reflect.field(v, $v{argName}): $type));
   }

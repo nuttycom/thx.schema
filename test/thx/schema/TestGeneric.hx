@@ -65,6 +65,34 @@ class TestGeneric {
     roundTripSchema(new Class3("a", 3), schemaf(string(), int()));
   }
 
+  public function testMakeEnumCase1() {
+    // var se = SimpleSchema.core.either;
+    var schemaf = schema(Case1, [
+                    // MyInts.schema()
+                  ]),
+        schema = schemaf(string(), int());
+
+    roundTripSchema(Case1.A, schema);
+    roundTripSchema(Case1.B("b"), schema);
+    roundTripSchema(Case1.C("b", 2, 0.1, false), schema);
+    // roundTripSchema(Case1.D({ i: 666 }), schema);
+    roundTripSchema(Case1.E(["x", "y"]), schema);
+    roundTripSchema(Case1.F([0.1, 0.2]), schema);
+    roundTripSchema(Case1.G("1"), schema);
+    // roundTripSchema(Case1.H([[{ i: 777 }, { i: 666 }]]), schema);
+    roundTripSchema(Case1.I(["1"]), schema);
+    roundTripSchema(Case1.J(Left(1)), schema);
+    roundTripSchema(Case1.J(Right(0.1)), schema);
+    roundTripSchema(Case1.K("x", 7), schema);
+    roundTripSchema(Case1.L(None), schema);
+    roundTripSchema(Case1.L(Some("1")), schema);
+    // roundTripSchema(Case1.M(null), schema);
+    roundTripSchema(Case1.M("Not Null"), schema);
+    // roundTripSchema(Case1.N(), schema);
+    // roundTripSchema(Case1.N(null), schema);
+    roundTripSchema(Case1.N("Not Null"), schema);
+  }
+
   // public function testArguments() {
   //   var f = schema(thx.Either);
   //   $type(f);
@@ -81,11 +109,16 @@ class TestGeneric {
   //   $type(f);
   // }
 
-  function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
+  function roundTripSchema<T>(v : T, schema : Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);
     // trace(r);
     notNull(r);
-    same(Right(v), schema.parseDynamic(identity, r));
+    switch schema.parseDynamic(identity, r) {
+      case Right(p):
+        same(v, p, 'expected $p to be equal to $v with serialized $r', pos);
+      case Left(e):
+        fail(e.toArray().join("\n").toString(), pos);
+    }
   }
 }
 
@@ -194,19 +227,19 @@ enum Case1<T1, T2> {
   A;
   B(bs: String);
   C(cs: String, ci: Int, cf: Float, cb: Bool);
-  D(d: MyInt);
+  // // D(d: MyInt);
   E(e: Array<String>);
   F(f: Array<Float>);
   G(a: T1);
-  H(a: Array<Array<MyInt>>);
+  // H(a: Array<Array<MyInt>>);
   I(a: Array<T1>);
   J(e: Either<Int, Float>);
   K(t1: T1, t2: T2);
   L(t1: Option<String>);
   M(s: Null<String>);
   N(?s: String);
-  // O(e: Either<T1, Float>);
 
+  // O(e: Either<T1, Float>);
   // O<T3>(t3: Option<Array<T3>>);
 }
 

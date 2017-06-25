@@ -1,5 +1,6 @@
 package thx.schema.macro;
 
+import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import thx.schema.macro.Error.*;
@@ -44,5 +45,12 @@ class Utils {
       case FVar(AccNormal, _) | FVar(AccNo, _): true;
       case _: false;
     }
+  }
+
+  public static function createExpressionFromDef(e: ExprDef) {
+    return {
+      expr: e,
+      pos: Context.currentPos()
+    };
   }
 }

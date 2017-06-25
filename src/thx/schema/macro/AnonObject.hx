@@ -4,11 +4,13 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import thx.schema.macro.Utils.*;
-import haxe.ds.Option;
 
 class AnonObject {
   static var nextId = 0;
   static var anonymMap: Map<String, Int> = new Map();
+
+  public static function fromEnumArgs(args: Array<{ t: Type, opt: Bool, name: String }>): AnonObject
+    return new AnonObject(args.map(AnonField.fromEnumArg));
 
   public var fields: Array<AnonField>;
   public function new(fields: Array<AnonField>) {
@@ -24,6 +26,13 @@ class AnonObject {
       doc: null,
       access: null,
     }));
+  }
+
+  public function toSetterObject() {
+    return createExpressionFromDef(EObjectDecl(fields.map(f -> {
+      field: f.name,
+      expr: macro $i{f.name}
+    })));
   }
 
   public function toString()
