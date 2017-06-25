@@ -3,7 +3,6 @@ package thx.schema.macro;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 // import haxe.macro.ExprTools;
-import thx.schema.macro.Types;
 using thx.Arrays;
 
 class TypeBuilder {

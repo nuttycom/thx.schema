@@ -2,7 +2,6 @@ package thx.schema.macro;
 
 import haxe.macro.Expr;
 import thx.schema.macro.Error.*;
-import thx.schema.macro.Types;
 import haxe.ds.Option;
 
 class Arguments {

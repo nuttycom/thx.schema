@@ -5,7 +5,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
-import thx.schema.macro.Types;
+import thx.schema.macro.BoundSchemaType;
 using thx.Arrays;
 
 class SchemaBuilder {
