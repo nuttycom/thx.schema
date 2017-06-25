@@ -91,6 +91,8 @@ class TestGeneric {
     // roundTripSchema(Case1.N(), schema);
     // roundTripSchema(Case1.N(null), schema);
     roundTripSchema(Case1.N("Not Null"), schema);
+    roundTripSchema(Case1.O(Left("a")), schema);
+    roundTripSchema(Case1.O(Right(4.0)), schema);
   }
 
   // public function testArguments() {
@@ -227,7 +229,7 @@ enum Case1<T1, T2> {
   A;
   B(bs: String);
   C(cs: String, ci: Int, cf: Float, cb: Bool);
-  // // D(d: MyInt);
+  // D(d: MyInt);
   E(e: Array<String>);
   F(f: Array<Float>);
   G(a: T1);
@@ -239,7 +241,7 @@ enum Case1<T1, T2> {
   M(s: Null<String>);
   N(?s: String);
 
-  // O(e: Either<T1, Float>);
+  O(e: Either<T1, Float>);
   // O<T3>(t3: Option<Array<T3>>);
 }
 
@@ -257,3 +259,59 @@ class MyInts {
     ));
   }
 }
+
+/*
+TODO:
+  - enum
+    - cases for constructors
+      + optional argument
+      + argument with explicit type parameters
+      + argument with custom schema
+      - argument is an array of objects
+      - argument with type parameters from constructor generic
+    + constructors with no arguments
+    - constructors with 1 argument
+    + constructors with multiple arguments
+  - class
+  - typedef
+  - abstract ?
+  - basic schemas for core types (eg: thx.DateTimeUtc)
+    - Any
+    - Date
+    - DateTime
+    - DateTimeUtc
+    - LocalDate
+    - LocalMonthDay
+    - LocalYearMonth
+    - Nel
+    - Time
+    - TimePeriod
+    - Timestamp
+
+    - Tuple (and friends)
+    - Map
+    - Ord
+    - Maybe
+    - ReadonlyArray
+    - Validation
+    - Weekday
+    - Uuid
+    - Decimal
+    - Char
+    - BitMatrix
+    - BitSet
+    - BigInt
+    - Rational
+    - Int64
+    - Path
+    - Url
+    - QueryString
+    - Result
+
+    - HashSet
+    - OrderedMap
+    - OrderedSet
+    - Set
+    - Error and friends?
+  + cases where E and String diverge
+*/
