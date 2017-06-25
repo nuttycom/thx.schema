@@ -54,11 +54,11 @@ class TestGeneric {
     roundTripSchema(new Class1("hi"), schemaf());
   }
 
-  // public function testClass2() {
-  //   var schemaf = schema(Class2, [ MyInts.schema() ]);
-  //   roundTripSchema(new Class2({ i: 3 }, None), schemaf());
-  //   roundTripSchema(new Class2({ i: 3 }, Some(Right([3.14]))), schemaf());
-  // }
+  public function testClass2() {
+    var schemaf = schema(Class2, [ MyInts.schema ]);
+    roundTripSchema(new Class2({ i: 3 }, None), schemaf());
+    roundTripSchema(new Class2({ i: 3 }, Some(Right([3.14]))), schemaf());
+  }
 
   public function testClass3() {
     var schemaf = schema(Class3, []);
@@ -66,12 +66,9 @@ class TestGeneric {
   }
 
   public function testMakeEnumCase1() {
-    // var se = SimpleSchema.core.either;
-    var schemaf = schema(Case1, [
-                    MyInts.schema
-                  ]),
+    var schemaf = schema(Case1, [ MyInts.schema ]),
         schema = schemaf(string(), int());
-
+$type(schema);
     roundTripSchema(Case1.A, schema);
     roundTripSchema(Case1.B("b"), schema);
     roundTripSchema(Case1.C("b", 2, 0.1, false), schema);
@@ -86,10 +83,10 @@ class TestGeneric {
     roundTripSchema(Case1.K("x", 7), schema);
     roundTripSchema(Case1.L(None), schema);
     roundTripSchema(Case1.L(Some("1")), schema);
-    // roundTripSchema(Case1.M(null), schema);
+    roundTripSchema(Case1.M(null), schema);
     roundTripSchema(Case1.M("Not Null"), schema);
-    // roundTripSchema(Case1.N(), schema);
-    // roundTripSchema(Case1.N(null), schema);
+    roundTripSchema(Case1.N(), schema);
+    roundTripSchema(Case1.N(null), schema);
     roundTripSchema(Case1.N("Not Null"), schema);
     roundTripSchema(Case1.O(Left("a")), schema);
     roundTripSchema(Case1.O(Right(4.0)), schema);
