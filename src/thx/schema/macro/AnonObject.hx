@@ -36,7 +36,7 @@ class AnonObject {
   }
 
   public function toString()
-    return '{ ${fields.map(f -> f.toString())} }';
+    return '{ ${fields.map(f -> f.toString()).join(", ")} }';
 
   public function toIdentifier() {
     var key = toString();

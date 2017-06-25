@@ -20,6 +20,9 @@ class BoundSchemaType {
   public static function createAnonFromFields(fields: Array<AnonField>)
     return new BoundSchemaType(AnonObject(new AnonObject(fields)));
 
+  public static function createTypeDef(type: QualifiedType<BoundSchemaType>, target: BoundSchemaType)
+    return new BoundSchemaType(TypeDef(type, target));
+
   public static function fromTypeName(typeName: String): Option<BoundSchemaType> {
     return (try {
       Some(Context.getType(typeName));
@@ -32,16 +35,18 @@ class BoundSchemaType {
     return new BoundSchemaType(LocalParam(param));
 
   public static function fromType(type: Type): BoundSchemaType {
-    type = Context.follow(type);
+    // do not follow the type here or you lose the aliased types
     return switch type {
       case TEnum(_.get() => t, p):
         fromEnumType(t, p);
       case TInst(_.get() => t, p):
         fromClassType(t, p);
       case TAbstract(_.get() => t, p):
-        fromAbstractType(t);
+        fromAbstractType(t, p);
       case TAnonymous(_.get() => t):
         fromAnonType(t);
+      case TType(_.get() => t, p):
+        fromDefType(t, p);
       case _:
         throw 'Unable to convert type to BoundSchemaType: $type';
     }
@@ -56,19 +61,20 @@ class BoundSchemaType {
       case KTypeParameter(_):
         createLocalParam(t.name);
       case _:
-        createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(t -> fromType(t))));
+        createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)));
     }
   }
 
-  // TODO !!!
-  static function fromAbstractType(t: AbstractType): BoundSchemaType
-    return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> fromType(p.t))));
+  static function fromAbstractType(t: AbstractType, p: Array<Type>): BoundSchemaType
+    return createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)));
 
-  // TODO !!!
   static function fromAnonType(t: AnonType): BoundSchemaType {
     var fields = t.fields.map(field -> new AnonField(field.name, BoundSchemaType.fromType(field.type)));
     return createAnonFromFields(fields);
   }
+
+  static function fromDefType(t: DefType, p: Array<Type>): BoundSchemaType
+    return createTypeDef(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)), fromType(t.type));
 
   public var type: BoundSchemaTypeImpl;
   public function new(type: BoundSchemaTypeImpl) {
@@ -80,6 +86,7 @@ class BoundSchemaType {
       case QualifiedType(type): type.toComplexType(t -> t.toComplexType());
       case AnonObject(obj): obj.toComplexType();
       case LocalParam(param): paramAsComplexType(param);
+      case TypeDef(type, _): type.toComplexType(t -> t.toComplexType());
     };
   }
 
@@ -88,6 +95,7 @@ class BoundSchemaType {
       case QualifiedType(type): type.toType();
       case AnonObject(obj): obj.toType();
       case LocalParam(param): paramAsType(param);
+      case TypeDef(type, _): type.toType();
     };
   }
 
@@ -96,12 +104,14 @@ class BoundSchemaType {
       case QualifiedType(type): type.params;
       case AnonObject(obj): []; // TODO !!!
       case LocalParam(param): []; // TODO !!!
+      case TypeDef(type, _): type.params;
     };
 
   public function toString(): String return switch type {
     case QualifiedType(type): type.toString();
     case AnonObject(obj): obj.toString();
     case LocalParam(param): param; // TODO !!!
+    case TypeDef(type, _): type.toString();
   }
 
   public function toUnboundSchemaType(): UnboundSchemaType {
@@ -117,4 +127,6 @@ enum BoundSchemaTypeImpl {
   LocalParam(param: String);
   QualifiedType(type: QualifiedType<BoundSchemaType>);
   AnonObject(obj: AnonObject);
+  // TODO
+  TypeDef(type: QualifiedType<BoundSchemaType>, target: BoundSchemaType);
 }

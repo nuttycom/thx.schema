@@ -57,15 +57,21 @@ class Arguments {
 
   static function exprToTypeSchemas(typeSchemas: Expr): Option<Map<String, Expr>> {
     var map = new Map();
+    function typeToString(t) {
+      return BoundSchemaType.fromType(t).toString();
+    }
+    function normalizeExpr(e) {
+      return Context.getTypedExpr(Context.typeExpr(e));
+    }
     switch typeSchemas.expr {
       case EConst(CIdent("null")):
       case EArrayDecl(arr):
         for(item in arr) {
           switch Context.typeof(item) {
             case TType(_.toString() => stype, [_, t]) if(stype == "thx.schema.Schema"):
-              map.set(TypeTools.toString(t), item);
+              map.set(typeToString(t), normalizeExpr(item));
             case TFun(_, TType(_.toString() => stype, [_, t])) if(stype == "thx.schema.Schema"):
-              map.set(TypeTools.toString(t), item);
+              map.set(typeToString(t), normalizeExpr(item));
             case _:
               None;
           }

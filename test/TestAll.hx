@@ -11,7 +11,6 @@ class TestAll {
     // runner.addCase(new TestSchemaDynamicExtensions());
     // runner.addCase(new TestSchemaGenExtensions());
     // runner.addCase(new TestSchemaSchema());
-    // runner.addCase(new TestMacroSchema());
     runner.addCase(new TestGeneric());
     Report.create(runner);
     runner.run();
