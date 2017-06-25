@@ -8,7 +8,6 @@ import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.Types.SantasLittleHelpers.*;
 import haxe.ds.Option;
-using thx.Arrays;
 using thx.Options;
 using thx.Strings;
 
@@ -60,7 +59,7 @@ class UnboundSchemaType {
         });
         UnboundSchemaType.createAnonFromFields(fields);
       case other:
-        fatal('unable to build a schema for $other');
+        fatal('Unable to build a schema for $other');
     }
   }
 
@@ -75,7 +74,7 @@ class UnboundSchemaType {
       case TAnonymous(_.get() => t):
         fromAnonType(t);
       case _:
-        throw 'unable to convert type to UnboundSchemaType: $type';
+        throw 'Unable to convert type to UnboundSchemaType: $type';
     }
   }
 
@@ -123,24 +122,6 @@ class UnboundSchemaType {
     };
   }
 
-  // public function toString() return switch this {
-  //   case Path(path):
-  //     path.toString();
-  //   case Object(fields):
-  //     objectToString(fields);
-  // }
-    // public function toString(): String return switch type {
-    //   case QualifiedType(type):
-    //   case AnonObject(obj):
-    // }
-
-  // public function toStringTypeWithParameters() return switch this {
-  //   case Path(path):
-  //     path.toStringTypeWithParameters();
-  //   case Object(fields):
-  //     objectToString(fields);
-  // }
-
   public function toIdentifier() return switch type {
     case QualifiedType(type): type.toIdentifier();
     case AnonObject(obj): obj.toIdentifier();
@@ -151,16 +132,6 @@ class UnboundSchemaType {
       case QualifiedType(type): type.params;
       case AnonObject(obj): [];
     };
-
-  // static function objectToString(fields: Array<ObjectField>)
-  //   return '{ ${fields.map(field -> field.toString()).join(", ")} }';
-
-  // public function toType(): Type {
-  //   return switch this {
-  //     case Path(p): p.toType();
-  //     case Object(f): fieldsToType(f);
-  //   };
-  // }
 
   static function stringParamAsComplexType(p: String)
     return TPath({ name: p, pack: [], params: [] });
@@ -173,7 +144,10 @@ class UnboundSchemaType {
   }
 
   public function toType(): Type {
-    return throw "NOT IMPLEMENTED";
+    return switch type {
+      case QualifiedType(type): type.toType();
+      case AnonObject(obj): obj.toType();
+    };
   }
 
   public function toString(): String
@@ -209,7 +183,7 @@ class BoundSchemaType {
   public static function fromType(type: Type): BoundSchemaType {
     return switch type {
       case TEnum(_.get() => t, p):
-        fromEnumType(t);
+        fromEnumType(t, p);
       case TInst(_.get() => t, p):
         fromClassType(t);
       case TAbstract(_.get() => t, p):
@@ -221,13 +195,19 @@ class BoundSchemaType {
     }
   }
 
-  // TODO !!!
-  static function fromEnumType(t: EnumType): BoundSchemaType
-    return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> fromType(p.t))));
+  static function fromEnumType(t: EnumType, p: Array<Type>): BoundSchemaType {
+    return createQualified(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)));
+  }
 
   // TODO !!!
-  static function fromClassType(t: ClassType): BoundSchemaType
-    return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> fromType(p.t))));
+  static function fromClassType(t: ClassType): BoundSchemaType {
+    return switch t.kind {
+      case KTypeParameter(_):
+        createLocalParam(t.name);
+      case _:
+        createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> fromType(p.t))));
+    }
+  }
 
   // TODO !!!
   static function fromAbstractType(t: AbstractType): BoundSchemaType
@@ -245,17 +225,25 @@ class BoundSchemaType {
   }
 
   public function toComplexType(): ComplexType {
-    return throw "NOT IMPLEMENTED";
+    return switch type {
+      case QualifiedType(type): type.toComplexType(t -> t.toComplexType());
+      case AnonObject(obj): obj.toComplexType();
+      case LocalParam(param): paramAsComplexType(param);
+    };
   }
 
   public function toType(): Type {
-    return throw "NOT IMPLEMENTED";
+    return switch type {
+      case QualifiedType(type): type.toType();
+      case AnonObject(obj): obj.toType();
+      case LocalParam(param): paramAsType(param);
+    };
   }
 
   public function parameters(): Array<BoundSchemaType>
     return switch type {
       case QualifiedType(type): type.params;
-      case AnonObject(obj): [];
+      case AnonObject(obj): []; // TODO !!!
       case LocalParam(param): []; // TODO !!!
     };
 
@@ -266,7 +254,11 @@ class BoundSchemaType {
   }
 
   public function toUnboundSchemaType(): UnboundSchemaType {
-    return throw "NOT IMPLEMENTED"; // get the compiler type and parse it again
+    var name = toString();
+    return switch UnboundSchemaType.fromTypeName(name) {
+      case Some(schemaType): schemaType;
+      case None: fatal('Unable to generate UnboundSchemaType for $name');
+    }
   }
 }
 
@@ -288,7 +280,7 @@ class QualifiedType<T> {
   public var params: Array<T>;
   public function new(pack: Array<String>, module: String, name: String, params: Array<T>) {
     this.pack = pack;
-    this.module = module;
+    this.module = module.split(".").pop();
     this.name = name;
     this.params = params;
   }
@@ -310,7 +302,7 @@ class QualifiedType<T> {
     return parts().join("_").upperCaseFirst();
 
   public function toType(): Type
-    return Context.getType(toString());
+    return Context.getType(toString()); // TODO !!! sufficient?
 
   public function toComplexType(f: T -> ComplexType): ComplexType {
     return TPath({
@@ -353,6 +345,14 @@ class AnonObject {
     var id = anonymMap.get(key);
     return '__Anonymous__$id';
   }
+
+  public function toType(): Type {
+    throw "TODO NOT IMPLEMENTED";
+    return Type.TAnonymous(createRef({
+      fields: [], // TODO
+      status: AClosed
+    }));
+  }
 }
 
 class AnonField {
@@ -367,100 +367,6 @@ class AnonField {
     return '$name: ${type.toString()}';
 }
 
-// this is meant to be derived from the first argument of `Generic.schema(Option)`.
-// public static function fromExpr(expr: Expr): UnboundSchemaType {
-//   return switch Context.typeof(expr) {
-//     case TType(_.get() => kind, p):
-//       var nameFromKind = extractTypeNameFromKind(kind.name);
-//       switch fromTypeName(nameFromKind) {
-//         case Some(typeReference):
-//           typeReference;
-//         case None:
-//           var nameFromExpr = ExprTools.toString(expr);
-//           switch fromTypeName(nameFromExpr) {
-//             case Some(typeReference):
-//               typeReference;
-//             case None:
-//               fatal('Cannot find a type for $nameFromExpr, if you are building a schema for an abstract you have to pass the full path');
-//           }
-//       }
-//     case TAnonymous(_.get() => t):
-//       var fields = t.fields.map(function(field) {
-//         var nameFromKind = extractTypeNameFromKind(TypeTools.toString(field.type));
-//         var type = switch fromTypeName(nameFromKind) {
-//           case Some(typeReference):
-//             typeReference;
-//           case None:
-//             fatal('Cannot find a type for $nameFromKind');
-//         }
-//         return new AnonField(field.name, type);
-//       });
-//       createAnonym(fields);
-//     case other:
-//       fatal('unable to build a schema for $other');
-//   }
-// }
-
-// public static function fromTypeName(typeName: String): Option<UnboundSchemaType> {
-//   return (try {
-//     Some(Context.getType(typeName));
-//   } catch(e: Dynamic) {
-//     None;
-//   }).flatMap(fromTypeOption);
-// }
-
-// public static function fromTypeOption(type: Type): Option<UnboundSchemaType> {
-//   return switch type {
-//     case TEnum(_.get() => t, p):
-//       Some(fromEnumType(t));
-//     case TInst(_.get() => t, p):
-//       // TODO !!!
-//       // switch t.kind {
-//       //   case KTypeParameter(_):
-//       //     Some(fromClassTypeParameter(t));
-//       //   case _:
-//           Some(fromClassType(t));
-//       // }
-//     case TAbstract(_.get() => t, p):
-//       Some(fromAbstractType(t));
-//     case TAnonymous(_.get() => t):
-//       Some(fromAnonType(t));
-//     case _:
-//       None;
-//   }
-// }
-
-// public static function fromType(type: Type): UnboundSchemaType {
-//   return switch fromTypeOption(type) {
-//     case Some(type): type;
-//     case None: fatal('unable to find type: ${type}');
-//   }
-// }
-
-// static function fromEnumType(t: EnumType): UnboundSchemaType
-//   return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
-
-// static function fromClassType(t: ClassType): UnboundSchemaType {
-//   return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
-// }
-
-// static function fromClassTypeParameter(t: ClassType): UnboundSchemaType {
-//   // trace("TINST pack: " + t.pack, "module: " + t.module, "name: " + t.name, "params: " + t.params.map(p -> p.name));
-//   var parts = t.module.split(".");
-//   var pack = t.pack.copy();
-//   var module = parts.pop() + "." + pack.pop();
-//   var type = t.name;
-//   return createQualified(new QualifiedType(pack, module, type, [], true));
-// }
-
-// static function fromAbstractType(t: AbstractType): UnboundSchemaType
-//   return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
-
-// static function fromAnonType(t: AnonType): UnboundSchemaType {
-//   var fields = t.fields.map(field -> new AnonField(field.name, fromType(field.type)));
-//   return createAnonym(fields);
-// }
-
 class SantasLittleHelpers {
   public static function extractTypeNameFromKind(s: String): String {
     var pattern = ~/^(?:Enum|Class|Abstract)[<](.+)[>]$/;
@@ -469,5 +375,28 @@ class SantasLittleHelpers {
     } else {
       fatal("Unable to extract type name from kind: " + s);
     }
+  }
+
+  public static function createRef<T>(t: T): Ref<T> {
+    return {
+      get: function (): T {
+        return t;
+      },
+      toString: function (): String {
+        return Std.string(t);
+      }
+    };
+  }
+
+  public static function paramAsComplexType(p: String): ComplexType {
+    return TPath({
+      pack: [],
+      name: p,
+      params: []
+    });
+  }
+
+  public static function paramAsType(p: String): Type {
+    return throw "TODO NOT IMPLEMENTED";
   }
 }

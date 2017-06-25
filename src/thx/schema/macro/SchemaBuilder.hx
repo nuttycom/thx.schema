@@ -11,13 +11,27 @@ using thx.Arrays;
 class SchemaBuilder {
   // here are passed things like Option<Array<A>> or Either<Option<String>> where A is a type paramter of the container schema
   public static function lookupSchema(schemaType: BoundSchemaType, typeSchemas: Map<String, Expr>): Expr {
-    var type = schemaType.toString();
-    if(typeSchemas.exists(type)) {
-      return typeSchemas.get(type);
-    } else {
-      var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
-      return macro $p{path};
-    }
+    return switch schemaType.type {
+      case LocalParam(param):
+        var name = TypeBuilder.variableNameFromTypeParameter(param);
+        return macro (() -> $i{name});
+      case QualifiedType(_):
+        var type = schemaType.toString();
+        if(typeSchemas.exists(type)) {
+          typeSchemas.get(type);
+        } else {
+          var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
+          macro $p{path};
+        }
+      case AnonObject(_):
+        var type = schemaType.toString();
+        if(typeSchemas.exists(type)) {
+          typeSchemas.get(type);
+        } else {
+          var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
+          macro $p{path};
+        }
+    };
   }
 
   public static function generateSchema(schemaType: BoundSchemaType, typeSchemas: Map<String, Expr>): Expr {
@@ -109,19 +123,27 @@ class SchemaBuilder {
   }
 
   static function createPropertyFromClassField(qtype: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>, cf: ClassField): Expr {
-    var argType = BoundSchemaType.fromType(cf.type),
-        argName = cf.name;
-    trace(argType.parameters());
+    var argType = BoundSchemaType.fromType(cf.type);
+    var argName = cf.name;
     return createProperty(qtype, argType, argName, typeSchemas);
   }
 
-  // static function createProperty(qtype: ComplexType, map: Map<String, Expr>, arg: {t:Type, opt:Bool, name:String}): Expr {
+  public static function resolveSchema(schemaType: BoundSchemaType, typeSchemas: Map<String, Expr>) {
+      var args = schemaType.parameters().map(resolveSchema.bind(_, typeSchemas));
+      var schema: Expr = lookupSchema(schemaType, typeSchemas);
+
+      if(args.length > 0) {
+        return macro thx.schema.SimpleSchema.lazy(() -> $schema($a{args}).schema);
+      } else {
+        return macro $schema();
+      };
+  }
+
   static function createProperty(qtype: QualifiedType<BoundSchemaType>, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {
-    var schema = lookupSchema(argType, typeSchemas),
+    var schema = resolveSchema(argType, typeSchemas),
         containerType = qtype.toComplexType(f -> f.toComplexType()),
         type = argType.toComplexType();
-
-    return macro thx.schema.SchemaDSL.required($v{argName}, $schema, function(v : $containerType): $type return Reflect.field(v, $v{argName}));
+    return macro thx.schema.SchemaDSL.required($v{argName}, $schema, (v : $containerType) -> (Reflect.field(v, $v{argName}): $type));
   }
 }
 

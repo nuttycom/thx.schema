@@ -4,7 +4,6 @@ import haxe.macro.Expr;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.Types;
 import haxe.ds.Option;
-using thx.Strings;
 
 class Arguments {
   /**
@@ -46,12 +45,11 @@ class Arguments {
 
   // TODO !!! allow registering new types?
   static var defaultTypeSchemas = [
-    "String" => macro thx.schema.SimpleSchema.string(),
-    "Bool" => macro thx.schema.SimpleSchema.bool(),
-    "Float" => macro thx.schema.SimpleSchema.float(),
-    "Int" => macro thx.schema.SimpleSchema.int(),
+    "String" => macro thx.schema.SimpleSchema.string,
+    "Bool" => macro thx.schema.SimpleSchema.bool,
+    "Float" => macro thx.schema.SimpleSchema.float,
+    "Int" => macro thx.schema.SimpleSchema.int,
     "Array" => macro thx.schema.SimpleSchema.array,
-    // "thx.Either" => macro thx.schema.SimpleSchema.core.either,
     "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
     "Null" => macro thx.schema.SimpleSchema.makeNullable
   ];

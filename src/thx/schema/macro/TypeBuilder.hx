@@ -2,7 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
+// import haxe.macro.ExprTools;
 import thx.schema.macro.Types;
 using thx.Arrays;
 
@@ -29,25 +29,25 @@ class TypeBuilder {
   }
 
   static function generateSchemaField(schemaType: UnboundSchemaType, typeSchemas: Map<String, Expr>): Field {
-    trace(schemaArgsFromTypeReference(schemaType));
-    trace(paramsFromTypeReference(schemaType));
-    trace(returnFromTypeReference(schemaType));
+    // trace(schemaArgsFromUnboundSchemaType(schemaType));
+    // trace(paramsFromUnboundSchemaType(schemaType));
+    // trace(returnFromTypeReference(schemaType));
     var schema = SchemaBuilder.generateSchema(schemaType.toBoundSchemaType(), typeSchemas);
-    trace(ExprTools.toString(schema));
+    // trace(ExprTools.toString(schema));
     return {
       access: [APublic, AStatic],
       pos: Context.currentPos(),
       name: "schema",
       kind: FFun({
-        args: schemaArgsFromTypeReference(schemaType),
+        args: schemaArgsFromUnboundSchemaType(schemaType),
         expr: macro return $schema,
-        params: paramsFromTypeReference(schemaType),
+        params: paramsFromUnboundSchemaType(schemaType),
         ret: returnFromTypeReference(schemaType),
       }),
     };
   }
 
-  static function schemaArgsFromTypeReference(schemaType: UnboundSchemaType) {
+  static function schemaArgsFromUnboundSchemaType(schemaType: UnboundSchemaType) {
     return schemaType.parameters().map(function(p) {
       var type = UnboundSchemaType.paramAsComplexType(p);
       var schemaType = macro : thx.schema.SimpleSchema.Schema<E, $type>;
@@ -61,8 +61,8 @@ class TypeBuilder {
     });
   }
 
-  static function paramsFromTypeReference(schemaType: UnboundSchemaType) {
-    return paramNamesFromTypeReference(schemaType).map(p -> {
+  static function paramsFromUnboundSchemaType(schemaType: UnboundSchemaType) {
+    return paramNamesFromUnboundSchemaType(schemaType).map(p -> {
       params: null,
       name: p,
       meta: null,
@@ -70,7 +70,7 @@ class TypeBuilder {
     });
   }
 
-  static function paramNamesFromTypeReference(schemaType: UnboundSchemaType) {
+  static function paramNamesFromUnboundSchemaType(schemaType: UnboundSchemaType) {
     return ["E"].concat(schemaType.parameters());
   }
 

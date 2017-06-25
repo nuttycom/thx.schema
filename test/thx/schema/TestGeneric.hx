@@ -2,10 +2,7 @@ package thx.schema;
 
 import utest.Assert.*;
 import thx.schema.Generic.*;
-// import thx.schema.SimpleSchema;
 import thx.schema.SimpleSchema.*;
-// import thx.schema.SchemaDSL.*;
-// import thx.schema.macro.Macros;
 using thx.schema.SchemaDynamicExtensions;
 import thx.Either;
 import thx.Functions.identity;
@@ -16,40 +13,37 @@ import thx.schema.SimpleSchema;
 class TestGeneric {
   public function new() {}
 
-  // public static function schema<E, A, B>(schemaA: Schema<E, A>, schemaB: Schema<E, B>): Schema<E, G<A, B>> {
-  //   return thx.schema.SimpleSchema.object(
-  //     thx.schema.SchemaDSL.ap3(
-  //       function createInstanceThx_schema_TestGeneric_G(a:A, b:B,
-  // c:StdTypes.Int):thx.schema.TestGeneric.G<A, B> {
-  //         var inst = Type.createEmptyInstance(thx.schema.TestGeneric.G);
-  //         Reflect.setField(inst, "a", a);
-  //         Reflect.setField(inst, "b", b);
-  //         Reflect.setField(inst, "c", c);
-  //         return inst;
-  //       },
-  //       thx.schema.SchemaDSL.required(
-  //         "a",
-  //         schemaA,
-  //         function(v:thx.schema.TestGeneric.G<A, B>): A return Reflect.field(v, "a") // TODO <- change return type
-  //       ),
-  //       thx.schema.SchemaDSL.required(
-  //         "b",
-  //         schemaB,
-  //         function(v:thx.schema.TestGeneric.G<A, B>): B return Reflect.field(v, "b") // TODO <- change return type
-  //       ),
-  //       thx.schema.SchemaDSL.required(
-  //         "c", thx.schema.SimpleSchema.int(),
-  //         function(v:thx.schema.TestGeneric.G<A, B>):StdTypes.Int return Reflect.field(v, "c")
-  //       )
-  //     )
-  //   );
-  // }
+  public function testBasicType() {
+    var f = schema(Int)();
+    roundTripSchema(7, f);
+  }
+
+  public function testSimpleClass() {
+    var s = schema(SimpleClass)();
+    roundTripSchema(new SimpleClass("x", 7), s);
+  }
+
+  public function testNestedClasses() {
+    var sf = schema(OuterClass)();
+    roundTripSchema(new OuterClass("bee", new InnerClass("foo")), sf);
+  }
+
+  public function testClassWithTypeParameters() {
+    var sf = schema(ClassWithTypeParameters);
+    roundTripSchema(new ClassWithTypeParameters("aaa", 0.123, 7), sf(string(), float()));
+  }
+
+  public function testRecursiveClass() {
+    var sf = schema(RecursiveClass);
+    roundTripSchema(
+      new RecursiveClass(
+        Some(new RecursiveClass(None, 6)),
+        7),
+      sf(int())
+    );
+  }
 
   // public function testArguments() {
-  //   var f = schema(String);
-  //   $type(f);
-  //   var f = schema(ClassWithTypeParameters);
-  //   $type(f);
   //   var f = schema(thx.Either);
   //   $type(f);
   //   trace(f());
@@ -65,30 +59,36 @@ class TestGeneric {
   //   $type(f);
   // }
 
-  public function testClassWithTypeParameters() {
-    // var sf = schema(ClassWithTypeParameters);
-    // roundTripSchema(new ClassWithTypeParameters("aaa", 0.123, 7), sf(string(), float()));
-  }
-
-  public function testBasicType() {
-    var sf = schema(Int);
-    roundTripSchema(7, sf);
-  }
-
-  // public function testRecursiveClass() {
-  //   var sf = schema(RecursiveClass);
-  //   roundTripSchema(
-  //     new RecursiveClass(
-  //       Some(new RecursiveClass(None, 6)),
-  //       7),
-  //     sf(int())
-  //   );
-  // }
-
   function roundTripSchema<T>(v : T, schema : Schema<String, T>) {
-    var r: T = schema.renderDynamic(v);
+    var r: {} = schema.renderDynamic(v);
     // trace(r);
+    notNull(r);
     same(Right(v), schema.parseDynamic(identity, r));
+  }
+}
+
+class SimpleClass {
+  var a: String;
+  var b: Int;
+  public function new(a: String, b: Int) {
+    this.a = a;
+    this.b = b;
+  }
+}
+
+class InnerClass {
+  var a: String;
+  public function new(a: String) {
+    this.a = a;
+  }
+}
+
+class OuterClass {
+  var b: String;
+  var inner: InnerClass;
+  public function new(b: String, inner: InnerClass) {
+    this.b = b;
+    this.inner = inner;
   }
 }
 
@@ -103,7 +103,6 @@ class ClassWithTypeParameters<A, B> {
   }
 }
 
-// TODO
 class RecursiveClass<X> {
   var r: Option<RecursiveClass<X>>;
   var x: X;
