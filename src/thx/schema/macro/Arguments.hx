@@ -1,6 +1,8 @@
 package thx.schema.macro;
 
+import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 import haxe.ds.Option;
 
@@ -16,9 +18,9 @@ class Arguments {
         typeSchemas = new Map();
 
     if(exprs.length == 0)
-      fatal('this method requires at least one argument that identifies a type whose schema needs to be generated');
+      fatal('This method requires at least one argument that identifies a type whose schema needs to be generated');
     if(exprs.length > 2)
-      fatal('this method takes at most 2 arguments');
+      fatal('This method takes at most 2 arguments');
 
     // here are passed things like Option or Either that gets interpreted as Option<T> or Either<L, R>
     // but also objects in the form of { field: Array<Option<String>> } which are very concrete and nested types
@@ -29,7 +31,7 @@ class Arguments {
         case Some(schemas):
           typeSchemas = schemas;
         case None:
-          fatal('the second argument is optional, when provided it needs to be a list of schemas');
+          fatal('The second argument is optional, when provided it needs to be a list of schemas');
       }
     }
 
@@ -53,7 +55,24 @@ class Arguments {
     "Null" => macro thx.schema.SimpleSchema.makeNullable
   ];
 
-  static function exprToTypeSchemas(expr: Expr): Option<Map<String, Expr>> {
-    return None; // TODO !!!
+  static function exprToTypeSchemas(typeSchemas: Expr): Option<Map<String, Expr>> {
+    var map = new Map();
+    switch typeSchemas.expr {
+      case EConst(CIdent("null")):
+      case EArrayDecl(arr):
+        for(item in arr) {
+          switch Context.typeof(item) {
+            case TType(_.toString() => stype, [_, t]) if(stype == "thx.schema.Schema"):
+              map.set(TypeTools.toString(t), item);
+            case TFun(_, TType(_.toString() => stype, [_, t])) if(stype == "thx.schema.Schema"):
+              map.set(TypeTools.toString(t), item);
+            case _:
+              None;
+          }
+        }
+      case _:
+        None;
+    }
+    return Some(map);
   }
 }

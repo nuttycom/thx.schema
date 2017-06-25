@@ -42,4 +42,13 @@ class Utils {
   public static function paramAsType(p: String): Type {
     return throw "TODO NOT IMPLEMENTED";
   }
+
+  public static function keepVariables(f: ClassField): Bool {
+    return switch f.kind {
+      case FVar(AccCall, AccCall): f.meta.has(":isVar");
+      case FVar(AccCall, _): true;
+      case FVar(AccNormal, _) | FVar(AccNo, _): true;
+      case _: false;
+    }
+  }
 }

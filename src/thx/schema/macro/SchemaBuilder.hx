@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.BoundSchemaType;
+import thx.schema.macro.Utils.*;
 using thx.Arrays;
 
 class SchemaBuilder {
@@ -46,7 +47,7 @@ class SchemaBuilder {
   }
 
   static function generateClassSchema(cls: ClassType, qtype: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    var fields = cls.fields.get();
+    var fields = cls.fields.get().filter(keepVariables);
     var n = fields.length;
     return if(n == 0) {
       var path = qtype.parts();

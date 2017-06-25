@@ -35,6 +35,7 @@ class BoundSchemaType {
     return new BoundSchemaType(LocalParam(param));
 
   public static function fromType(type: Type): BoundSchemaType {
+    type = Context.follow(type);
     return switch type {
       case TEnum(_.get() => t, p):
         fromEnumType(t, p);
@@ -45,7 +46,7 @@ class BoundSchemaType {
       case TAnonymous(_.get() => t):
         fromAnonType(t);
       case _:
-        throw 'unable to convert type to BoundSchemaType: $type';
+        throw 'Unable to convert type to BoundSchemaType: $type';
     }
   }
 
