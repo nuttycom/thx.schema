@@ -10,7 +10,6 @@ import thx.schema.macro.Utils.*;
 import thx.schema.macro.BoundSchemaType;
 import haxe.ds.Option;
 using thx.Options;
-using thx.Strings;
 
 class UnboundSchemaType {
   public static function createQualified(type: QualifiedType<String>)

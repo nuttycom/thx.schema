@@ -2,13 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
 import haxe.macro.Type;
-import haxe.macro.TypeTools;
-import thx.schema.macro.Error.*;
-import thx.schema.macro.Utils.*;
-import haxe.ds.Option;
-using thx.Options;
 using thx.Strings;
 
 class QualifiedType<T> {

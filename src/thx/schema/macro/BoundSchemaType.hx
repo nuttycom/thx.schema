@@ -2,14 +2,11 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.ExprTools;
 import haxe.macro.Type;
-import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.Utils.*;
 import haxe.ds.Option;
 using thx.Options;
-using thx.Strings;
 
 // this is the type for things inside object literals used like this: Generic.schema({ name: Option<String> })
 // and also it is used when looking up schemas during generation
