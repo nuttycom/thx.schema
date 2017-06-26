@@ -3,15 +3,20 @@ package thx.schema.macro;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import haxe.macro.ComplexTypeTools;
 import thx.schema.macro.Error.*;
 
 class Utils {
   public static function extractTypeNameFromKind(s: String): String {
-    var pattern = ~/^(?:Enum|Class|Abstract)[<](.+)[>]$/;
-    return if(pattern.match(s)) {
-      pattern.matched(1);
+    if(s.substring(0, 1) == "{") {
+      return s;
     } else {
-      fatal("Unable to extract type name from kind: " + s);
+      var pattern = ~/^(?:Enum|Class|Abstract)[<](.+)[>]$/;
+      return if(pattern.match(s)) {
+        pattern.matched(1);
+      } else {
+        fatal("Unable to extract type name from kind: " + s);
+      }
     }
   }
 
@@ -35,7 +40,9 @@ class Utils {
   }
 
   public static function paramAsType(p: String): Type {
-    return throw "TODO NOT IMPLEMENTED";
+    trace(p);
+    var ct = paramAsComplexType(p);
+    return ComplexTypeTools.toType(ct); //throw "TODO NOT IMPLEMENTED Utils.paramAsType";
   }
 
   public static function keepVariables(f: ClassField): Bool {

@@ -68,7 +68,7 @@ class TestGeneric {
   public function testMakeEnumCase1() {
     var schemaf = schema(Case1, [ MyInts.schema ]),
         schema = schemaf(string(), int());
-$type(schema);
+
     roundTripSchema(Case1.A, schema);
     roundTripSchema(Case1.B("b"), schema);
     roundTripSchema(Case1.C("b", 2, 0.1, false), schema);
@@ -92,10 +92,27 @@ $type(schema);
     roundTripSchema(Case1.O(Right(4.0)), schema);
   }
 
+  public function testEither() {
+    var schema = schema(thx.Either)(int(), string());
+    roundTripSchema(Left(1), schema);
+    roundTripSchema(Right("X"), schema);
+  }
+
+  // public function testAnonymous() {
+  //   var s = schema({ name: String, address : { email: String, city: String } })();
+  //   roundTripSchema({ name: "Foo", address : { email: "some@exmaple.com", city: "Boulder" } }, s);
+  // }
+
+  // public function testTuple() {
+  //   var s = schema(thx.Tuple.Tuple2)(int(), string());
+  //   roundTripSchema(Tuple.of(1, "X"), s);
+  //   // var s = schema(thx.Tuple.Tuple)(int(), string());
+  //   // roundTripSchema(Tuple.of(1, "X"), s);
+  //   // var s = schema(thx.Tuple)(int(), string());
+  //   // roundTripSchema(Tuple.of(1, "X"), s);
+  // }
+
   // public function testArguments() {
-  //   var f = schema(thx.Either);
-  //   $type(f);
-  //   trace(f());
   //   var f = schema(thx.Tuple.Tuple2);
   //   $type(f);
   //   var f = schema({ name : String, age : Int });

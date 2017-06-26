@@ -1,4 +1,5 @@
 package thx.schema.macro;
+import haxe.macro.Context;
 import haxe.macro.Type;
 
 class AnonField {
@@ -14,4 +15,21 @@ class AnonField {
 
   public function toString()
     return '$name: ${type.toString()}';
+
+  public function toClassField(): ClassField {
+    // throw "TODO NOT IMPLEMENTED AnonObject.toType"; // TODO
+    trace("TO CLASS FIELD");
+    return {
+      isPublic: true,
+      kind: FVar(AccNormal, AccNormal),
+      meta: null,
+      name: name,
+      params: [], // TODO ???
+      pos: Context.currentPos(),
+      type: type.toType(),
+      expr: null,
+      doc: null,
+      overloads: null
+    };
+  }
 }

@@ -47,20 +47,80 @@ class UnboundSchemaType {
             }
         }
       case TAnonymous(_.get() => t):
-        var fields = t.fields.map(function(field) {
-          var nameFromKind = extractTypeNameFromKind(TypeTools.toString(field.type));
-          var type = switch BoundSchemaType.fromTypeName(nameFromKind) {
-            case Some(typeReference):
-              typeReference;
-            case None:
-              fatal('Cannot find a type for $nameFromKind');
-          }
-          return new AnonField(field.name, type);
-        });
-        UnboundSchemaType.createAnonFromFields(fields);
+        trace("!!!!!!!!!!!!!!!!!!!! " + t);
+        trace(unwrapAnonType(t));
+        fromType(TAnonymous(createRef(unwrapAnonType(t))));
+      //   var fields = t.fields.map(function(field) {
+      //     trace(field.type);
+      //     switch field.type {
+      //       case TAnonymous(_.get() => t):
+      //         trace(t);
+      // // trace("BEFORE PARSE " + typeName);
+      // // var expr = Context.parse(typeName, Context.currentPos());
+      // // trace(ExprTools.toString(expr));
+      // // return Some(UnboundSchemaType.fromExpr(expr).toBoundSchemaType());
+      //         return null;
+      //       case _:
+      //         var nameFromKind = extractTypeNameFromKind(TypeTools.toString(field.type));
+      //         trace("$$$$$$$$$$$$$$$$$$$$$$ " + nameFromKind);
+      //         var type = switch BoundSchemaType.fromTypeName(nameFromKind) {
+      //           case Some(typeReference):
+      //             typeReference;
+      //           case None:
+      //             fatal('Cannot find a type for $nameFromKind');
+      //         }
+      //         return new AnonField(field.name, type);
+      //     }
+      //   });
+      //   UnboundSchemaType.createAnonFromFields(fields);
       case other:
         fatal('Unable to build a schema for $other');
     }
+  }
+
+  static function unwrapAnonType(type: AnonType): AnonType {
+    return {
+      status: type.status,
+      fields: type.fields.map(function(f) return {
+        doc: f.doc,
+        isPublic: f.isPublic,
+        kind: f.kind,
+        meta: f.meta,
+        name: f.name,
+        overloads: f.overloads,
+        params: f.params,
+        pos: f.pos,
+        type: unwrapType(f.type),
+        expr: f.expr
+      })
+    };
+  }
+
+  static function unwrapType(type: Type): Type {
+    return switch type {
+      case TType(_.get() => t, p):
+        trace(t.name);
+        TType(createRef({
+          doc: t.doc,
+          isExtern: t.isExtern,
+          isPrivate: t.isPrivate,
+          meta: t.meta,
+          module: t.module,
+          name: extractTypeNameFromKind(t.name),
+          pack: t.pack,
+          params: t.params,
+          pos: t.pos,
+          type: t.type,
+          exclude: t.exclude
+        }), p);
+      case TAnonymous(_.get() => t):
+        trace(t);
+        TAnonymous(createRef(unwrapAnonType(t)));
+      case _:
+        fatal('Unable to unwrap $type');
+    }
+    // trace(type);
+    // return type;
   }
 
   public static function fromType(type: Type): UnboundSchemaType {

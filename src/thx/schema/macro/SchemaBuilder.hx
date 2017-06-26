@@ -51,11 +51,15 @@ class SchemaBuilder {
 
   public static function generateSchema(schemaType: BoundSchemaType, typeSchemas: Map<String, Expr>): Expr {
     return switch [schemaType.toType(), schemaType.type] {
-      case [TInst(_.get() => cls, _),     BoundSchemaTypeImpl.QualifiedType(qtype)]: generateClassSchema(cls,    qtype, typeSchemas);
-      case [TEnum(_.get() => enm, _),     BoundSchemaTypeImpl.QualifiedType(qtype)]: generateEnumSchema(enm,     qtype, typeSchemas);
-      case [TAbstract(_.get() => abs, _), BoundSchemaTypeImpl.QualifiedType(qtype)]: generateAbstractSchema(abs, qtype, typeSchemas);
-      // TODO
-      case [TAnonymous(_.get() => anon),  BoundSchemaTypeImpl.AnonObject(obj)]:      generateAnonSchema(anon,    obj,   typeSchemas);
+      case [TInst(_.get() => cls, _),     BoundSchemaTypeImpl.QualifiedType(qtype)]:
+        generateClassSchema(cls,    qtype, typeSchemas);
+      case [TEnum(_.get() => enm, _),     BoundSchemaTypeImpl.QualifiedType(qtype)]:
+        generateEnumSchema(enm,     qtype, typeSchemas);
+      case [TAbstract(_.get() => abs, _), BoundSchemaTypeImpl.QualifiedType(qtype)]:
+        generateAbstractSchema(abs, qtype, typeSchemas);
+      case [TAnonymous(_.get() => anon),  BoundSchemaTypeImpl.AnonObject(obj)]:
+        trace("GENERATE ANONYMOUS");
+        generateAnonSchema(anon,    obj,   typeSchemas);
       case _: fatal('Cannot generate schema for unsupported type ${schemaType.toString()}');
     }
   }
@@ -138,17 +142,50 @@ class SchemaBuilder {
 
   static function generateEnumSchema(enm: EnumType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
     var constructors: Array<Expr> = enm.names.map(name -> generateEnumConstructor(name, enm.constructs.get(name), schemaType, typeSchemas));
-    var body = macro thx.schema.SimpleSchema.oneOf([$a{constructors}]);
-    // trace(ExprTools.toString(body));
-    return body;
+    return macro thx.schema.SimpleSchema.oneOf([$a{constructors}]);
   }
 
   static function generateAbstractSchema(abs: AbstractType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    return macro null; // TODO
+    // capture underlying type
+    var implementationType = UnboundSchemaType.fromType(abs.type);
+    var implementationPath = TypeBuilder.ensure(implementationType, typeSchemas);
+    // trace(abs.impl);
+
+    // // ensure schema for type
+
+    // // return cast schema?
+    // trace(schemaType);
+    // trace(abs);
+    trace(implementationType);
+    trace(implementationPath);
+    return throw 'TODO NOT IMPLEMENTED SchemaBuilder.generateAbstractSchema';
   }
 
   static function generateAnonSchema(anon: AnonType, anonObject: AnonObject, typeSchemas: Map<String, Expr>) {
-    return macro null; // TODO
+    trace(anonObject);
+
+    var n = anonObject.fields.length;
+    var apN = 'ap$n';
+    var containerType = anonObject.toComplexType();
+    var object = anonObject.toSetterObject();
+    var cargs = anonObject.fields.map(arg -> {
+          ctype: arg.type.toComplexType(),
+          name: arg.name,
+          opt: false
+        });
+    var constructorF = createFunction(null, cargs, macro return $object, containerType, []);
+    var objectProperties = anon.fields.map(f -> createProperty(
+      BoundSchemaType.createAnon(anonObject),
+      BoundSchemaType.fromType(f.type),
+      f.name,
+      typeSchemas
+    ));
+    objectProperties.each(e -> ExprTools.toString(e));
+    var apNArgs = [constructorF].concat(objectProperties);
+
+    var body = macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
+    trace(ExprTools.toString(body));
+    return body;
   }
 
   static function createFunction(name: Null<String>, args: Array<FunctionArgument>, body: Expr, returnType: Null<ComplexType>, typeParams: Array<String>): Expr {

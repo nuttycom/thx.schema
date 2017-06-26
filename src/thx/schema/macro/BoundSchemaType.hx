@@ -2,6 +2,7 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.Utils.*;
@@ -36,6 +37,7 @@ class BoundSchemaType {
 
   public static function fromType(type: Type): BoundSchemaType {
     // do not follow the type here or you lose the aliased types
+    trace(type);
     return switch type {
       case TEnum(_.get() => t, p):
         fromEnumType(t, p);

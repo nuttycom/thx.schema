@@ -48,10 +48,10 @@ class AnonObject {
   }
 
   public function toType(): Type {
-    throw "TODO NOT IMPLEMENTED";
-    return Type.TAnonymous(createRef({
-      fields: [], // TODO
-      status: AClosed
-    }));
+    var anonType: AnonType = {
+            fields: fields.map(f -> f.toClassField()),
+            status: AOpened
+          };
+    return Type.TAnonymous(createRef(anonType));
   }
 }
