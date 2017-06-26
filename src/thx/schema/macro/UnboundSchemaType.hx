@@ -10,6 +10,7 @@ import thx.schema.macro.Utils.*;
 import thx.schema.macro.BoundSchemaType;
 import haxe.ds.Option;
 using thx.Options;
+using thx.Strings;
 
 class UnboundSchemaType {
   public static function createQualified(type: QualifiedType<String>)
@@ -22,59 +23,46 @@ class UnboundSchemaType {
     return new UnboundSchemaType(AnonObject(new AnonObject(fields)));
 
   public static function fromTypeName(typeName: String): Option<UnboundSchemaType> {
-    return (try {
-      Some(Context.getType(typeName));
-    } catch(e: Dynamic) {
-      None;
-    }).map(fromType);
+    if(typeName.startsWith("{")) {
+      // anonymous object
+      var schema = UnboundSchemaType.fromExpr(Context.parse(typeName, Context.currentPos()));
+      return Some(schema);
+    } else {
+      return (try {
+        Some(Context.getType(typeName));
+      } catch(e: Dynamic) {
+        None;
+      }).map(fromType);
+    }
   }
 
   // this is meant to be derived from the first argument of `Generic.schema(Option)`.
   public static function fromExpr(expr: Expr): UnboundSchemaType {
-    return switch Context.typeof(expr) {
-      case TType(_.get() => kind, p):
-        var nameFromKind = extractTypeNameFromKind(kind.name);
-        switch fromTypeName(nameFromKind) {
-          case Some(typeReference):
-            typeReference;
-          case None:
-            var nameFromExpr = ExprTools.toString(expr);
-            switch fromTypeName(nameFromExpr) {
+    return switch expr.expr {
+      case EConst(CIdent(s)):
+        var type = Context.getType(s);
+        UnboundSchemaType.fromType(type);
+      case _:
+        switch Context.typeof(expr) {
+          case TType(_.get() => kind, p):
+            var nameFromKind = extractTypeNameFromKind(kind.name);
+            switch fromTypeName(nameFromKind) {
               case Some(typeReference):
                 typeReference;
               case None:
-                fatal('Cannot find a type for $nameFromExpr, if you are building a schema for an abstract you have to pass the full path');
+                var nameFromExpr = ExprTools.toString(expr);
+                switch fromTypeName(nameFromExpr) {
+                  case Some(typeReference):
+                    typeReference;
+                  case None:
+                    fatal('Cannot find a type for $nameFromExpr, if you are building a schema for an abstract you have to pass the full path');
+                }
             }
+          case TAnonymous(_.get() => t):
+            fromType(TAnonymous(createRef(unwrapAnonType(t))));
+          case other:
+            fatal('Unable to build a schema for $other');
         }
-      case TAnonymous(_.get() => t):
-        trace("!!!!!!!!!!!!!!!!!!!! " + t);
-        trace(unwrapAnonType(t));
-        fromType(TAnonymous(createRef(unwrapAnonType(t))));
-      //   var fields = t.fields.map(function(field) {
-      //     trace(field.type);
-      //     switch field.type {
-      //       case TAnonymous(_.get() => t):
-      //         trace(t);
-      // // trace("BEFORE PARSE " + typeName);
-      // // var expr = Context.parse(typeName, Context.currentPos());
-      // // trace(ExprTools.toString(expr));
-      // // return Some(UnboundSchemaType.fromExpr(expr).toBoundSchemaType());
-      //         return null;
-      //       case _:
-      //         var nameFromKind = extractTypeNameFromKind(TypeTools.toString(field.type));
-      //         trace("$$$$$$$$$$$$$$$$$$$$$$ " + nameFromKind);
-      //         var type = switch BoundSchemaType.fromTypeName(nameFromKind) {
-      //           case Some(typeReference):
-      //             typeReference;
-      //           case None:
-      //             fatal('Cannot find a type for $nameFromKind');
-      //         }
-      //         return new AnonField(field.name, type);
-      //     }
-      //   });
-      //   UnboundSchemaType.createAnonFromFields(fields);
-      case other:
-        fatal('Unable to build a schema for $other');
     }
   }
 
@@ -99,28 +87,12 @@ class UnboundSchemaType {
   static function unwrapType(type: Type): Type {
     return switch type {
       case TType(_.get() => t, p):
-        trace(t.name);
-        TType(createRef({
-          doc: t.doc,
-          isExtern: t.isExtern,
-          isPrivate: t.isPrivate,
-          meta: t.meta,
-          module: t.module,
-          name: extractTypeNameFromKind(t.name),
-          pack: t.pack,
-          params: t.params,
-          pos: t.pos,
-          type: t.type,
-          exclude: t.exclude
-        }), p);
+        Context.getType(extractTypeNameFromKind(t.name));
       case TAnonymous(_.get() => t):
-        trace(t);
         TAnonymous(createRef(unwrapAnonType(t)));
       case _:
         fatal('Unable to unwrap $type');
     }
-    // trace(type);
-    // return type;
   }
 
   public static function fromType(type: Type): UnboundSchemaType {
@@ -133,6 +105,8 @@ class UnboundSchemaType {
         fromAbstractType(t);
       case TAnonymous(_.get() => t):
         fromAnonType(t);
+      case TType(_.get() => t, p):
+        fromDefType(t);
       case _:
         throw 'Unable to convert type to UnboundSchemaType: $type';
     }
@@ -151,6 +125,9 @@ class UnboundSchemaType {
     var fields = t.fields.map(field -> new AnonField(field.name, BoundSchemaType.fromType(field.type)));
     return createAnonFromFields(fields);
   }
+
+  static function fromDefType(t: DefType): UnboundSchemaType
+    return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
 
   public static function paramAsComplexType(p: String): ComplexType {
     return TPath({

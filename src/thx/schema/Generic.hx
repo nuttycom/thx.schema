@@ -9,14 +9,6 @@ import thx.schema.macro.TypeBuilder;
 class Generic {
   macro public static function schema(exprs: Array<Expr>) {
     var args = Arguments.parseArguments(exprs);
-
-    // TODO !!! remove
-    // trace("-------------------------------------------\n");
-    // trace("typeRef:    " + args.typeRef.toString());
-    // trace("identifier: " + args.typeRef.toIdentifier());
-    // trace("\n");
-    // END REMOVE
-
     var typename = args.typeSchema.toString();
     if(args.typeSchemas.exists(typename))
       return args.typeSchemas.get(typename);

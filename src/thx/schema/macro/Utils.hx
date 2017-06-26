@@ -40,9 +40,8 @@ class Utils {
   }
 
   public static function paramAsType(p: String): Type {
-    trace(p);
     var ct = paramAsComplexType(p);
-    return ComplexTypeTools.toType(ct); //throw "TODO NOT IMPLEMENTED Utils.paramAsType";
+    return ComplexTypeTools.toType(ct);
   }
 
   public static function keepVariables(f: ClassField): Bool {

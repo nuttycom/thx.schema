@@ -58,8 +58,9 @@ class SchemaBuilder {
       case [TAbstract(_.get() => abs, _), BoundSchemaTypeImpl.QualifiedType(qtype)]:
         generateAbstractSchema(abs, qtype, typeSchemas);
       case [TAnonymous(_.get() => anon),  BoundSchemaTypeImpl.AnonObject(obj)]:
-        trace("GENERATE ANONYMOUS");
         generateAnonSchema(anon,    obj,   typeSchemas);
+      case [TType(_.get() => def, _),  BoundSchemaTypeImpl.QualifiedType(qtype)]:
+        generateDefTypeSchema(def, qtype,  typeSchemas);
       case _: fatal('Cannot generate schema for unsupported type ${schemaType.toString()}');
     }
   }
@@ -90,6 +91,11 @@ class SchemaBuilder {
       opt: false,
       name: cf.name
     };
+  }
+
+  static function generateDefTypeSchema(def: DefType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
+    var schema = TypeBuilder.ensure(UnboundSchemaType.fromType(def.type), typeSchemas);
+    return macro $p{schema}(); // TODO apply type parameters?
   }
 
   static function generateClassConstructorF(args: Array<FunctionArgument>, qtype: QualifiedType<BoundSchemaType>) {
@@ -133,7 +139,6 @@ class SchemaBuilder {
             case _: None;
           }
         );
-        // trace(ExprTools.toString(body));
         body;
       case _:
         fatal('unable to match correct type for enum constructor: ${constructor}');
@@ -149,21 +154,18 @@ class SchemaBuilder {
     // capture underlying type
     var implementationType = UnboundSchemaType.fromType(abs.type);
     var implementationPath = TypeBuilder.ensure(implementationType, typeSchemas);
-    // trace(abs.impl);
 
     // // ensure schema for type
 
     // // return cast schema?
     // trace(schemaType);
     // trace(abs);
-    trace(implementationType);
-    trace(implementationPath);
+    // trace(implementationType);
+    // trace(implementationPath);
     return throw 'TODO NOT IMPLEMENTED SchemaBuilder.generateAbstractSchema';
   }
 
   static function generateAnonSchema(anon: AnonType, anonObject: AnonObject, typeSchemas: Map<String, Expr>) {
-    trace(anonObject);
-
     var n = anonObject.fields.length;
     var apN = 'ap$n';
     var containerType = anonObject.toComplexType();
@@ -183,9 +185,7 @@ class SchemaBuilder {
     objectProperties.each(e -> ExprTools.toString(e));
     var apNArgs = [constructorF].concat(objectProperties);
 
-    var body = macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
-    trace(ExprTools.toString(body));
-    return body;
+    return macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
   }
 
   static function createFunction(name: Null<String>, args: Array<FunctionArgument>, body: Expr, returnType: Null<ComplexType>, typeParams: Array<String>): Expr {

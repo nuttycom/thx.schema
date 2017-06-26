@@ -17,8 +17,6 @@ class AnonField {
     return '$name: ${type.toString()}';
 
   public function toClassField(): ClassField {
-    // throw "TODO NOT IMPLEMENTED AnonObject.toType"; // TODO
-    trace("TO CLASS FIELD");
     return {
       isPublic: true,
       kind: FVar(AccNormal, AccNormal),

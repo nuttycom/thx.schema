@@ -90,6 +90,7 @@ class TestGeneric {
     roundTripSchema(Case1.N("Not Null"), schema);
     roundTripSchema(Case1.O(Left("a")), schema);
     roundTripSchema(Case1.O(Right(4.0)), schema);
+    roundTripSchema(Case1.P(Some(Case1.P(None))), schema);
   }
 
   public function testEither() {
@@ -98,10 +99,42 @@ class TestGeneric {
     roundTripSchema(Right("X"), schema);
   }
 
-  // public function testAnonymous() {
-  //   var s = schema({ name: String, address : { email: String, city: String } })();
-  //   roundTripSchema({ name: "Foo", address : { email: "some@exmaple.com", city: "Boulder" } }, s);
-  // }
+  public function testAnonymous() {
+    var s = schema({ name: String, email: String })();
+    roundTripSchema({ name: "Foo", email: "some@exmaple.com" }, s);
+    var s = schema({ name: String, address : { email: String, city: String } })();
+    roundTripSchema({ name: "Foo", address : { email: "some@exmaple.com", city: "Boulder" } }, s);
+  }
+
+  public function testPartialType() {
+    var s = schema(Either)(int(), float());
+    roundTripSchema(Left(1), s);
+    roundTripSchema(Right(0.1), s);
+  }
+
+  public function testTypeAlias() {
+    var s = schema(YourInt)();
+    roundTripSchema({ i2: 1 }, s);
+
+// typedef YourInt = { i2: Int };
+// typedef NestedTypeAlias = { i2: Option<NestedTypeAlias> };
+// typedef TypeAliasWithTypeParameters<A, B, C> = {
+//   a: A,
+//   b: Option<B>,
+//   c: Array<C>,
+//   d: Float,
+//   e: { f: String, g: { i: MyInt } }
+// }
+
+// typedef NestedTypeAliasWithTypeParameter<A> = {
+//   a: Option<NestedTypeAliasWithTypeParameter<A>>,
+//   b: Option<NestedTypeAliasWithTypeParameter<String>>
+// }
+
+// typedef IllegalTypedef = {
+//   f: Void -> Void
+// }
+  }
 
   // public function testTuple() {
   //   var s = schema(thx.Tuple.Tuple2)(int(), string());
@@ -127,7 +160,7 @@ class TestGeneric {
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);
-    // trace(r);
+    trace(haxe.Json.stringify(r));
     notNull(r);
     switch schema.parseDynamic(identity, r) {
       case Right(p):
@@ -254,8 +287,8 @@ enum Case1<T1, T2> {
   L(t1: Option<String>);
   M(s: Null<String>);
   N(?s: String);
-
   O(e: Either<T1, Float>);
+  P(v: Option<Case1<T1, T2>>);
   // O<T3>(t3: Option<Array<T3>>);
 }
 
@@ -266,12 +299,31 @@ enum Case2 {
 
 typedef MyInt = { i: Int };
 class MyInts {
-  public static function schema<E>(): Schema<E, MyInt> {
+  public static function schema(): Schema<String, MyInt> {
     return object(ap1(
       (i) -> { i: i },
       required("i", int(), (x:MyInt) -> x.i)
     ));
   }
+}
+
+typedef YourInt = { i2: Int };
+typedef NestedTypeAlias = { i2: Option<NestedTypeAlias> };
+typedef TypeAliasWithTypeParameters<A, B, C> = {
+  a: A,
+  b: Option<B>,
+  c: Array<C>,
+  d: Float,
+  e: { f: String, g: { i: MyInt } }
+}
+
+typedef NestedTypeAliasWithTypeParameter<A> = {
+  a: Option<NestedTypeAliasWithTypeParameter<A>>,
+  b: Option<NestedTypeAliasWithTypeParameter<String>>
+}
+
+typedef IllegalTypedef = {
+  f: Void -> Void
 }
 
 /*

@@ -2,7 +2,6 @@ package thx.schema.macro;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
-import haxe.macro.TypeTools;
 import thx.schema.macro.Error.*;
 import haxe.ds.Option;
 

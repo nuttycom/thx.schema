@@ -27,11 +27,7 @@ class TypeBuilder {
   }
 
   static function generateSchemaField(schemaType: UnboundSchemaType, typeSchemas: Map<String, Expr>): Field {
-    // trace(schemaArgsFromUnboundSchemaType(schemaType));
-    // trace(paramsFromUnboundSchemaType(schemaType));
-    // trace(returnFromTypeReference(schemaType));
     var schema = SchemaBuilder.generateSchema(schemaType.toBoundSchemaType(), typeSchemas);
-    // trace(ExprTools.toString(schema));
     return {
       access: [APublic, AStatic],
       pos: Context.currentPos(),
@@ -48,7 +44,7 @@ class TypeBuilder {
   static function schemaArgsFromUnboundSchemaType(schemaType: UnboundSchemaType) {
     return schemaType.parameters().map(function(p) {
       var type = UnboundSchemaType.paramAsComplexType(p);
-      var schemaType = macro : thx.schema.SimpleSchema.Schema<E, $type>;
+      var schemaType = macro : thx.schema.SimpleSchema.Schema<String, $type>;
       return {
         value: null,
         type: schemaType,
@@ -69,12 +65,12 @@ class TypeBuilder {
   }
 
   static function paramNamesFromUnboundSchemaType(schemaType: UnboundSchemaType) {
-    return ["E"].concat(schemaType.parameters());
+    return schemaType.parameters();
   }
 
   static function returnFromTypeReference(schemaType: UnboundSchemaType): ComplexType {
     var type = schemaType.toComplexType();
-    return macro : thx.schema.SimpleSchema.Schema<E, $type>;
+    return macro : thx.schema.SimpleSchema.Schema<String, $type>;
   }
 
   public static var generated = [];
@@ -85,6 +81,7 @@ class TypeBuilder {
       generated.push(identifier);
       var module = getModuleName(identifier);
       var typeDefinition = generateTypeDefinition(identifier, schemaType, typeSchemas);
+      trace(new haxe.macro.Printer("  ").printTypeDefinition(typeDefinition));
       Context.defineModule(module, [typeDefinition]);
     }
     return getPath(identifier);
