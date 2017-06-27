@@ -116,7 +116,21 @@ class TestGeneric {
     var s = schema(YourInt)();
     roundTripSchema({ i2: 1 }, s);
 
-// typedef YourInt = { i2: Int };
+    var s = schema(NestedTypeAlias)();
+    roundTripSchema({ i2: Some({ i2: None }) }, s);
+
+    var s = schema(TypeAliasWithTypeParameters)(string(), int(), float());
+    roundTripSchema({
+      a : "X",
+      b: Some(1),
+      c: [0.3, 0.4],
+      d: 0.9,
+      e: {
+        f: "Y",
+        g: { i: { i: 10 } }
+      }
+    }, s);
+
 // typedef NestedTypeAlias = { i2: Option<NestedTypeAlias> };
 // typedef TypeAliasWithTypeParameters<A, B, C> = {
 //   a: A,
@@ -160,7 +174,6 @@ class TestGeneric {
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);
-    trace(haxe.Json.stringify(r));
     notNull(r);
     switch schema.parseDynamic(identity, r) {
       case Right(p):

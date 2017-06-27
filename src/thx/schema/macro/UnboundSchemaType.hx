@@ -24,7 +24,6 @@ class UnboundSchemaType {
 
   public static function fromTypeName(typeName: String): Option<UnboundSchemaType> {
     if(typeName.startsWith("{")) {
-      // anonymous object
       var schema = UnboundSchemaType.fromExpr(Context.parse(typeName, Context.currentPos()));
       return Some(schema);
     } else {
@@ -42,6 +41,12 @@ class UnboundSchemaType {
       case EConst(CIdent(s)):
         var type = Context.getType(s);
         UnboundSchemaType.fromType(type);
+      case EObjectDecl(fields):
+        UnboundSchemaType.createAnonFromFields(
+          fields.map(field -> {
+            new AnonField(field.field, UnboundSchemaType.fromExpr(field.expr).toBoundSchemaType());
+          })
+        );
       case _:
         switch Context.typeof(expr) {
           case TType(_.get() => kind, p):

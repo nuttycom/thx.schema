@@ -5,6 +5,7 @@ import haxe.macro.Expr;
 import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
+import haxe.macro.ComplexTypeTools;
 import thx.schema.macro.Error.*;
 import thx.schema.macro.BoundSchemaType;
 import thx.schema.macro.Utils.*;
@@ -34,13 +35,14 @@ class SchemaBuilder {
           var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
           macro $p{path};
         }
-      case TypeDef(type, target):
-        var type = schemaType.toString();
-        if(typeSchemas.exists(type)) {
-          typeSchemas.get(type);
+      case TypeDef(type):
+        var stype = schemaType.toString();
+        if(typeSchemas.exists(stype)) {
+          typeSchemas.get(stype);
         } else {
-          var path = TypeBuilder.ensure(
-            target.toUnboundSchemaType(),
+          var targetType = TypeTools.toComplexType(Context.getType(stype)); // Context.follow(Context.getType(stype));
+          var path = TypeBuilder.ensure(UnboundSchemaType.fromType(ComplexTypeTools.toType(targetType)),
+            // target.toUnboundSchemaType(),
             typeSchemas,
             schemaType.toUnboundSchemaType().toIdentifier()
           );
@@ -80,8 +82,7 @@ class SchemaBuilder {
       var apN = 'ap$n';
       var apNArgs = [constructor].concat(properties);
       // return schema
-      var body = macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
-      body;
+      macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
     }
   }
 
@@ -94,8 +95,12 @@ class SchemaBuilder {
   }
 
   static function generateDefTypeSchema(def: DefType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    var schema = TypeBuilder.ensure(UnboundSchemaType.fromType(def.type), typeSchemas);
-    return macro $p{schema}(); // TODO apply type parameters?
+    return switch [def.type, BoundSchemaType.fromType(def.type).type] {
+      case [TAnonymous(_.get() => t), BoundSchemaTypeImpl.AnonObject(obj)]:
+        generateAnonSchema(t, obj, typeSchemas);
+      case _:
+        fatal('Unsupported Type Definition for type: ${def.type}');
+    }
   }
 
   static function generateClassConstructorF(args: Array<FunctionArgument>, qtype: QualifiedType<BoundSchemaType>) {
@@ -222,14 +227,14 @@ class SchemaBuilder {
   }
 
   public static function resolveSchema(schemaType: BoundSchemaType, typeSchemas: Map<String, Expr>) {
-      var args = schemaType.parameters().map(resolveSchema.bind(_, typeSchemas));
-      var schema: Expr = lookupSchema(schemaType, typeSchemas);
+    var schema: Expr = lookupSchema(schemaType, typeSchemas);
+    var args = schemaType.parameters().map(resolveSchema.bind(_, typeSchemas));
 
-      if(args.length > 0) {
-        return macro thx.schema.SimpleSchema.lazy(() -> $schema($a{args}).schema);
-      } else {
-        return macro $schema();
-      };
+    if(args.length > 0) {
+      return macro thx.schema.SimpleSchema.lazy(() -> $schema($a{args}).schema);
+    } else {
+      return macro $schema();
+    };
   }
 
   static function createProperty(qtype: BoundSchemaType, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {

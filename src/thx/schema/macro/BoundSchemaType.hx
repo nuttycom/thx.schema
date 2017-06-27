@@ -21,8 +21,8 @@ class BoundSchemaType {
   public static function createAnonFromFields(fields: Array<AnonField>)
     return new BoundSchemaType(AnonObject(new AnonObject(fields)));
 
-  public static function createTypeDef(type: QualifiedType<BoundSchemaType>, target: BoundSchemaType)
-    return new BoundSchemaType(TypeDef(type, target));
+  public static function createTypeDef(type: QualifiedType<BoundSchemaType>)
+    return new BoundSchemaType(TypeDef(type));
 
   public static function fromTypeName(typeName: String): Option<BoundSchemaType> {
     return (try {
@@ -48,6 +48,8 @@ class BoundSchemaType {
         fromAnonType(t);
       case TType(_.get() => t, p):
         fromDefType(t, p);
+      case TMono(_.get() => t):
+        fromType(t);
       case _:
         throw 'Unable to convert type to BoundSchemaType: $type';
     }
@@ -74,8 +76,10 @@ class BoundSchemaType {
     return createAnonFromFields(fields);
   }
 
-  static function fromDefType(t: DefType, p: Array<Type>): BoundSchemaType
-    return createTypeDef(new QualifiedType(t.pack, t.module, t.name, p.map(fromType)), fromType(t.type));
+  static function fromDefType(t: DefType, p: Array<Type>): BoundSchemaType {
+    var params = p.map(fromType);
+    return createTypeDef(new QualifiedType(t.pack, t.module, t.name, params));
+  }
 
   public var type: BoundSchemaTypeImpl;
   public function new(type: BoundSchemaTypeImpl) {
@@ -87,7 +91,7 @@ class BoundSchemaType {
       case QualifiedType(type): type.toComplexType(t -> t.toComplexType());
       case AnonObject(obj): obj.toComplexType();
       case LocalParam(param): paramAsComplexType(param);
-      case TypeDef(type, _): type.toComplexType(t -> t.toComplexType());
+      case TypeDef(type): type.toComplexType(t -> t.toComplexType());
     };
   }
 
@@ -96,7 +100,7 @@ class BoundSchemaType {
       case QualifiedType(type): type.toType();
       case AnonObject(obj): obj.toType();
       case LocalParam(param): paramAsType(param);
-      case TypeDef(type, _): type.toType();
+      case TypeDef(type): type.toType();
     };
   }
 
@@ -105,22 +109,25 @@ class BoundSchemaType {
       case QualifiedType(type): type.params;
       case AnonObject(obj): []; // TODO !!!
       case LocalParam(param): []; // TODO !!!
-      case TypeDef(type, _): type.params;
+      case TypeDef(type): type.params;
     };
 
   public function toString(): String return switch type {
     case QualifiedType(type): type.toString();
     case AnonObject(obj): obj.toString();
     case LocalParam(param): param; // TODO !!!
-    case TypeDef(type, _): type.toString();
+    case TypeDef(type): type.toString();
   }
 
   public function toUnboundSchemaType(): UnboundSchemaType {
-    var name = toString();
-    return switch UnboundSchemaType.fromTypeName(name) {
-      case Some(schemaType): schemaType;
-      case None: fatal('Unable to generate UnboundSchemaType for $name');
-    }
+    return switch type {
+      case LocalParam(param):
+        UnboundSchemaType.createQualified(new QualifiedType([], null, param, []));
+      case QualifiedType(type) | TypeDef(type):
+        UnboundSchemaType.fromType(type.toType());
+      case AnonObject(obj):
+        UnboundSchemaType.createAnon(obj);
+    };
   }
 }
 
@@ -128,6 +135,5 @@ enum BoundSchemaTypeImpl {
   LocalParam(param: String);
   QualifiedType(type: QualifiedType<BoundSchemaType>);
   AnonObject(obj: AnonObject);
-  // TODO
-  TypeDef(type: QualifiedType<BoundSchemaType>, target: BoundSchemaType);
+  TypeDef(type: QualifiedType<BoundSchemaType>);
 }
