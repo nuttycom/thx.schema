@@ -40,13 +40,21 @@ class SchemaBuilder {
         if(typeSchemas.exists(stype)) {
           typeSchemas.get(stype);
         } else {
-          var targetType = TypeTools.toComplexType(Context.getType(stype)); // Context.follow(Context.getType(stype));
-          var path = TypeBuilder.ensure(UnboundSchemaType.fromType(ComplexTypeTools.toType(targetType)),
-            // target.toUnboundSchemaType(),
-            typeSchemas,
-            schemaType.toUnboundSchemaType().toIdentifier()
-          );
-          macro $p{path};
+          var type = schemaType.toString();
+          if(typeSchemas.exists(type)) {
+            typeSchemas.get(type);
+          } else {
+            var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
+            macro $p{path};
+          }
+          // var targetType = TypeTools.toComplexType(Context.getType(stype)); // Context.follow(Context.getType(stype));
+          // trace(targetType);
+          // var path = TypeBuilder.ensure(UnboundSchemaType.fromType(ComplexTypeTools.toType(targetType)),
+          //   // target.toUnboundSchemaType(),
+          //   typeSchemas,
+          //   schemaType.toUnboundSchemaType().toIdentifier()
+          // );
+          // macro $p{path};
         }
     };
   }

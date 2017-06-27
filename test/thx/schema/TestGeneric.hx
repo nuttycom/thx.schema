@@ -131,19 +131,19 @@ class TestGeneric {
       }
     }, s);
 
-// typedef NestedTypeAlias = { i2: Option<NestedTypeAlias> };
-// typedef TypeAliasWithTypeParameters<A, B, C> = {
-//   a: A,
-//   b: Option<B>,
-//   c: Array<C>,
-//   d: Float,
-//   e: { f: String, g: { i: MyInt } }
-// }
+    var s = schema(NestedTypeAliasWithTypeParameter)(int()),
+        value: NestedTypeAliasWithTypeParameter<Int> = {
+          a: Some({
+            a: None,
+            b: None
+          }),
+          b: Some({
+            a: None,
+            b: None
+          })
+        };
+    roundTripSchema(value, s);
 
-// typedef NestedTypeAliasWithTypeParameter<A> = {
-//   a: Option<NestedTypeAliasWithTypeParameter<A>>,
-//   b: Option<NestedTypeAliasWithTypeParameter<String>>
-// }
 
 // typedef IllegalTypedef = {
 //   f: Void -> Void
