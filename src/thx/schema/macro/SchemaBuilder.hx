@@ -27,12 +27,12 @@ class SchemaBuilder {
           var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
           macro $p{path};
         }
-      case AnonObject(_):
+      case AnonObject(obj):
         var type = schemaType.toString();
         if(typeSchemas.exists(type)) {
           typeSchemas.get(type);
         } else {
-          var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
+          var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(obj.params), typeSchemas);
           macro $p{path};
         }
       case TypeDef(type):
@@ -47,14 +47,6 @@ class SchemaBuilder {
             var path = TypeBuilder.ensure(schemaType.toUnboundSchemaType(), typeSchemas);
             macro $p{path};
           }
-          // var targetType = TypeTools.toComplexType(Context.getType(stype)); // Context.follow(Context.getType(stype));
-          // trace(targetType);
-          // var path = TypeBuilder.ensure(UnboundSchemaType.fromType(ComplexTypeTools.toType(targetType)),
-          //   // target.toUnboundSchemaType(),
-          //   typeSchemas,
-          //   schemaType.toUnboundSchemaType().toIdentifier()
-          // );
-          // macro $p{path};
         }
     };
   }
@@ -100,15 +92,6 @@ class SchemaBuilder {
       opt: false,
       name: cf.name
     };
-  }
-
-  static function generateDefTypeSchema(def: DefType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    return switch [def.type, BoundSchemaType.fromType(def.type).type] {
-      case [TAnonymous(_.get() => t), BoundSchemaTypeImpl.AnonObject(obj)]:
-        generateAnonSchema(t, obj, typeSchemas);
-      case _:
-        fatal('Unsupported Type Definition for type: ${def.type}');
-    }
   }
 
   static function generateClassConstructorF(args: Array<FunctionArgument>, qtype: QualifiedType<BoundSchemaType>) {
@@ -164,21 +147,28 @@ class SchemaBuilder {
   }
 
   static function generateAbstractSchema(abs: AbstractType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
-    // capture underlying type
-    var implementationType = UnboundSchemaType.fromType(abs.type);
-    var implementationPath = TypeBuilder.ensure(implementationType, typeSchemas);
-
-    // // ensure schema for type
-
-    // // return cast schema?
-    // trace(schemaType);
-    // trace(abs);
-    // trace(implementationType);
-    // trace(implementationPath);
-    return throw 'TODO NOT IMPLEMENTED SchemaBuilder.generateAbstractSchema';
+    var wrappedType = switch BoundSchemaType.fromType(abs.type).type {
+      case AnonObject(obj):
+        BoundSchemaType.createAnonFromFields(obj.fields, schemaType.params);
+      case other:
+        new BoundSchemaType(other);
+    };
+    var schema = resolveSchema(wrappedType, typeSchemas);
+    return macro $schema;
   }
 
-  static function generateAnonSchema(anon: AnonType, anonObject: AnonObject, typeSchemas: Map<String, Expr>) {
+  static function generateDefTypeSchema(def: DefType, schemaType: QualifiedType<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
+    return switch [def.type, BoundSchemaType.fromType(def.type).type] {
+      case [TAnonymous(_.get() => t), BoundSchemaTypeImpl.AnonObject(obj)]:
+        generateAnonSchema(t, obj, typeSchemas);
+      case [TAbstract(_.get() => t, p), BoundSchemaTypeImpl.QualifiedType(qtype)]:
+        generateAbstractSchema(t, qtype, typeSchemas);
+      case [_, s]:
+        fatal('Unsupported Type Definition for type: ${def.type} and $s');
+    }
+  }
+
+  static function generateAnonSchema(anon: AnonType, anonObject: AnonObject<BoundSchemaType>, typeSchemas: Map<String, Expr>) {
     var n = anonObject.fields.length;
     var apN = 'ap$n';
     var containerType = anonObject.toComplexType();
@@ -191,13 +181,12 @@ class SchemaBuilder {
     var constructorF = createFunction(null, cargs, macro return $object, containerType, []);
     var objectProperties = anon.fields.map(f -> createProperty(
       BoundSchemaType.createAnon(anonObject),
-      BoundSchemaType.fromType(f.type),
+      BoundSchemaType.fromTypeOrTypeParam(f.type, anonObject.params),
       f.name,
       typeSchemas
     ));
     objectProperties.each(e -> ExprTools.toString(e));
     var apNArgs = [constructorF].concat(objectProperties);
-
     return macro thx.schema.SimpleSchema.object(thx.schema.SchemaDSL.$apN($a{apNArgs}));
   }
 

@@ -34,7 +34,7 @@ class TypeBuilder {
       name: "schema",
       kind: FFun({
         args: schemaArgsFromUnboundSchemaType(schemaType),
-        expr: macro return $schema,
+        expr: macro return cast $schema,
         params: paramsFromUnboundSchemaType(schemaType),
         ret: returnFromTypeReference(schemaType),
       }),
@@ -56,16 +56,12 @@ class TypeBuilder {
   }
 
   static function paramsFromUnboundSchemaType(schemaType: UnboundSchemaType) {
-    return paramNamesFromUnboundSchemaType(schemaType).map(p -> {
+    return schemaType.parameters().map(p -> {
       params: null,
       name: p,
       meta: null,
       constraints: null
     });
-  }
-
-  static function paramNamesFromUnboundSchemaType(schemaType: UnboundSchemaType) {
-    return schemaType.parameters();
   }
 
   static function returnFromTypeReference(schemaType: UnboundSchemaType): ComplexType {
@@ -81,7 +77,6 @@ class TypeBuilder {
       generated.push(identifier);
       var module = getModuleName(identifier);
       var typeDefinition = generateTypeDefinition(identifier, schemaType, typeSchemas);
-      trace(new haxe.macro.Printer("  ").printTypeDefinition(typeDefinition));
       Context.defineModule(module, [typeDefinition]);
     }
     return getPath(identifier);

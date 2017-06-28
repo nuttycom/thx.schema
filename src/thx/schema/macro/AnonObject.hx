@@ -5,16 +5,18 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import thx.schema.macro.Utils.*;
 
-class AnonObject {
+class AnonObject<T> {
   static var nextId = 0;
   static var anonymMap: Map<String, Int> = new Map();
 
-  public static function fromEnumArgs(args: Array<{ t: Type, opt: Bool, name: String }>): AnonObject
-    return new AnonObject(args.map(AnonField.fromEnumArg));
+  public static function fromEnumArgs<T>(args: Array<{ t: Type, opt: Bool, name: String }>): AnonObject<T>
+    return new AnonObject(args.map(AnonField.fromEnumArg), []); // TODO constructor params
 
   public var fields: Array<AnonField>;
-  public function new(fields: Array<AnonField>) {
+  public var params: Array<T>;
+  public function new(fields: Array<AnonField>, params: Array<T>) {
     this.fields = fields;
+    this.params = params;
   }
 
   public function toComplexType(): ComplexType {

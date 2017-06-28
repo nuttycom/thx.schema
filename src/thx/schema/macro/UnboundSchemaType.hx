@@ -16,11 +16,11 @@ class UnboundSchemaType {
   public static function createQualified(type: QualifiedType<String>)
     return new UnboundSchemaType(QualifiedType(type));
 
-  public static function createAnon(obj: AnonObject)
+  public static function createAnon(obj: AnonObject<String>)
     return new UnboundSchemaType(AnonObject(obj));
 
-  public static function createAnonFromFields(fields: Array<AnonField>)
-    return new UnboundSchemaType(AnonObject(new AnonObject(fields)));
+  public static function createAnonFromFields(fields: Array<AnonField>, params: Array<String>)
+    return createAnon(new AnonObject(fields, params));
 
   public static function fromTypeName(typeName: String): Option<UnboundSchemaType> {
     if(typeName.startsWith("{")) {
@@ -45,7 +45,8 @@ class UnboundSchemaType {
         UnboundSchemaType.createAnonFromFields(
           fields.map(field -> {
             new AnonField(field.field, UnboundSchemaType.fromExpr(field.expr).toBoundSchemaType());
-          })
+          }),
+          []
         );
       case _:
         switch Context.typeof(expr) {
@@ -112,8 +113,10 @@ class UnboundSchemaType {
         fromAnonType(t);
       case TType(_.get() => t, p):
         fromDefType(t);
+      // case TFun(_):
+      //   fatal('A schema for anonymous objects with methods cannot be generated for ' + TypeTools.toString(type));
       case _:
-        throw 'Unable to convert type to UnboundSchemaType: $type';
+        fatal('Unable to convert type to UnboundSchemaType: $type');
     }
   }
 
@@ -123,12 +126,12 @@ class UnboundSchemaType {
   static function fromClassType(t: ClassType): UnboundSchemaType
     return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
 
-  static function fromAbstractType(t: AbstractType): UnboundSchemaType
+  public static function fromAbstractType(t: AbstractType): UnboundSchemaType
     return createQualified(new QualifiedType(t.pack, t.module, t.name, t.params.map(p -> p.name)));
 
   static function fromAnonType(t: AnonType): UnboundSchemaType {
     var fields = t.fields.map(field -> new AnonField(field.name, BoundSchemaType.fromType(field.type)));
-    return createAnonFromFields(fields);
+    return createAnonFromFields(fields, []);
   }
 
   static function fromDefType(t: DefType): UnboundSchemaType
@@ -160,7 +163,12 @@ class UnboundSchemaType {
         );
         BoundSchemaType.createQualified(ntype);
       case AnonObject(obj):
-        BoundSchemaType.createAnon(obj);
+        BoundSchemaType.createAnonFromFields(
+          obj.fields,
+          obj.params
+            .map(LocalParam)
+            .map(BoundSchemaType.new)
+        );
     };
   }
 
@@ -172,7 +180,7 @@ class UnboundSchemaType {
   public function parameters(): Array<String>
     return switch type {
       case QualifiedType(type): type.params;
-      case AnonObject(obj): [];
+      case AnonObject(obj): obj.params;
     };
 
   static function stringParamAsComplexType(p: String)
@@ -201,5 +209,5 @@ class UnboundSchemaType {
 
 enum UnboundSchemaTypeImpl {
   QualifiedType(type: QualifiedType<String>);
-  AnonObject(obj: AnonObject);
+  AnonObject(obj: AnonObject<String>);
 }

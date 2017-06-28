@@ -41,7 +41,27 @@ class Utils {
 
   public static function paramAsType(p: String): Type {
     var ct = paramAsComplexType(p);
-    return ComplexTypeTools.toType(ct);
+    return TInst(createRef({
+      module: "M",
+      init: null,
+      kind: KTypeParameter([]),
+      meta: null,
+      name: p,
+      pack: [],
+      interfaces: [],
+      params: [],
+      doc: null,
+      pos: Context.currentPos(),
+      fields: createRef([]),
+      statics: createRef([]),
+      isPrivate: false,
+      constructor: null,
+      isInterface: false,
+      isExtern: false,
+      superClass: null,
+      exclude: function() {},
+      overrides: null
+    }), []); // TODO
   }
 
   public static function keepVariables(f: ClassField): Bool {

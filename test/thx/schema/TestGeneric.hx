@@ -143,34 +143,21 @@ class TestGeneric {
           })
         };
     roundTripSchema(value, s);
-
-
-// typedef IllegalTypedef = {
-//   f: Void -> Void
-// }
   }
 
-  // public function testTuple() {
-  //   var s = schema(thx.Tuple.Tuple2)(int(), string());
-  //   roundTripSchema(Tuple.of(1, "X"), s);
-  //   // var s = schema(thx.Tuple.Tuple)(int(), string());
-  //   // roundTripSchema(Tuple.of(1, "X"), s);
-  //   // var s = schema(thx.Tuple)(int(), string());
-  //   // roundTripSchema(Tuple.of(1, "X"), s);
-  // }
+  public function testTuple() {
+    var s = schema(thx.Tuple.Tuple2)(int(), string());
+    roundTripSchema(Tuple.of(1, "X"), s);
+    var s = schema(thx.Tuple.Tuple)(int(), string());
+    roundTripSchema(Tuple.of(1, "X"), s);
+    var s = schema(thx.Tuple)(int(), string());
+    roundTripSchema(Tuple.of(1, "X"), s);
+  }
 
-  // public function testArguments() {
-  //   var f = schema(thx.Tuple.Tuple2);
-  //   $type(f);
-  //   var f = schema({ name : String, age : Int });
-  //   $type(f);
-  //   var f = schema({ age : Int, name : String });
-  //   $type(f);
-  //   var f = schema({ wineName : String, age : Int });
-  //   $type(f);
-  //   var f = schema({ name : String, age : Int });
-  //   $type(f);
-  // }
+  public function testPath() {
+    var s = schema(thx.Path)();
+    roundTripSchema(thx.Path.fromString("/users/some/file"), s);
+  }
 
   function roundTripSchema<T>(v : T, schema : Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);

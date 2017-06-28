@@ -9,7 +9,6 @@ using thx.Bools;
 
 import thx.schema.SchemaF;
 import thx.schema.SchemaDSL.*;
-using thx.schema.SchemaFExtensions;
 
 typedef Schema<E, A> = AnnotatedSchema<E, Unit, A>
 
