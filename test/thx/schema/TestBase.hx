@@ -10,7 +10,7 @@ class TestBase {
 
   function roundTripSchema<T>(v: T, schema: Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);
-    // trace(r);
+    trace(r);
     notNull(r);
     switch schema.parseDynamic(identity, r) {
       case Right(p):
@@ -23,7 +23,7 @@ class TestBase {
   function failDeserialization<Ser, T>(serialized: Ser, schema: Schema<String, T>, ?pos: haxe.PosInfos) {
     switch schema.parseDynamic(identity, serialized) {
       case Right(p):
-        fail('deserializing `$serialized` should have failed');
+        fail('deserializing `$serialized` should have failed', pos);
       case Left(e):
         // haxe.Log.trace(e.toArray().map(e -> e.toString()).join(";\n"), pos);
         pass(pos);

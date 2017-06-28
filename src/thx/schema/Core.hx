@@ -6,6 +6,12 @@ import thx.schema.SimpleSchema.*;
 import thx.Nel;
 
 class Core {
+  public static function date(): Schema<String, Date>
+    return unsafeStringParseSchema(
+      Date.fromString,
+      (v: Date) -> v.toString()
+    );
+
   public static function dateTime(): Schema<String, DateTime>
     return unsafeStringParseSchema(
       thx.DateTime.fromString,
@@ -16,6 +22,12 @@ class Core {
     return unsafeStringParseSchema(
       thx.DateTimeUtc.fromString,
       (v: thx.DateTimeUtc) -> v.toString()
+    );
+
+  public static function json<JSON>(): Schema<String, JSON>
+    return unsafeStringParseSchema(
+      haxe.Json.parse,
+      (v: JSON) -> haxe.Json.stringify(v)
     );
 
   public static function localDate(): Schema<String, LocalDate>
@@ -36,18 +48,6 @@ class Core {
       (v: thx.LocalYearMonth) -> v.toString()
     );
 
-  public static function time(): Schema<String, Time>
-    return unsafeStringParseSchema(
-      thx.Time.fromString,
-      (v: thx.Time) -> v.toString()
-    );
-
-  public static function json<JSON>(): Schema<String, JSON>
-    return unsafeStringParseSchema(
-      haxe.Json.parse,
-      (v: JSON) -> haxe.Json.stringify(v)
-    );
-
   public static function nel<Element>(elementSchema: Schema<String, Element>): Schema<String, Nel<Element>> {
     return liftS(
       ParseSchema(
@@ -63,6 +63,39 @@ class Core {
     );
   }
 
+  public static function path(): Schema<String, thx.Path>
+    return unsafeStringParseSchema(
+      thx.Path.fromString,
+      (v: thx.Path) -> v.toString()
+    );
+
+  public static function queryString(): Schema<String, thx.QueryString>
+    return unsafeStringParseSchema(
+      thx.QueryString.parse,
+      (v: thx.QueryString) -> v.toString()
+    );
+
+  public static function readonlyArray<E, T>(elementSchema: Schema<E, T>): Schema<E, thx.ReadonlyArray<T>>
+    return iso(
+      array(elementSchema),
+      (v: Array<T>) -> (v : thx.ReadonlyArray<T>),
+      (v: thx.ReadonlyArray<T>) -> v.toArray()
+    );
+
+  public static function time(): Schema<String, Time>
+    return unsafeStringParseSchema(
+      thx.Time.fromString,
+      (v: thx.Time) -> v.toString()
+    );
+
+  public static function url(): Schema<String, thx.Url>
+    return unsafeStringParseSchema(
+      thx.Url.fromString,
+      (v: thx.Url) -> v.toString()
+    );
+
+
+  // utils
   static function unsafeStringParseSchema<T>(unsafeParse: String -> T, render: T -> String): Schema<String, T>
     return unsafeParseSchema(string(), unsafeParse, render);
 

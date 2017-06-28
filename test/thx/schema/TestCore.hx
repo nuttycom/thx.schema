@@ -14,6 +14,11 @@ class TestCore extends TestBase {
     failDeserialization('{a:"b"}', json());
   }
 
+  public function testDate() {
+    roundTripSchema(Date.fromString("2015-03-29"), date());
+    failDeserialization('x', date());
+  }
+
   public function testDateTime() {
     roundTripSchema(thx.DateTime.fromString("2015-03-29"), dateTime());
     failDeserialization('x', dateTime());
@@ -42,5 +47,21 @@ class TestCore extends TestBase {
   public function testTime() {
     roundTripSchema(thx.Time.fromString("25:30:58.0123"), time());
     failDeserialization('x', time());
+  }
+
+  public function testPath() {
+    roundTripSchema(thx.Path.fromString("/some/path"), path());
+  }
+
+  public function testUrl() {
+    roundTripSchema(thx.Url.fromString("http://google.com/?q=yay"), url());
+  }
+
+  public function testQueryString() {
+    roundTripSchema(thx.QueryString.parse("q=yay"), queryString());
+  }
+
+  public function testReadonlyArray() {
+    roundTripSchema(([1,2,3] : thx.ReadonlyArray<Int>), readonlyArray(int()));
   }
 }

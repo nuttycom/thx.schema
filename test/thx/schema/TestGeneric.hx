@@ -163,6 +163,12 @@ class TestGeneric extends TestBase {
     var s = schema(ClassWithReferenceToThxCoreTypes)();
     roundTripSchema(new ClassWithReferenceToThxCoreTypes(Nel.pure("a"), DateTimeUtc.fromString("2017-01-02")), s);
   }
+
+  public function testTimestamp() {
+    var timestamp = schema(thx.Timestamp);
+    roundTripSchema(thx.Timestamp.fromString("2015-03-29"), timestamp());
+    failDeserialization('x', timestamp());
+  }
 }
 
 class SimpleClass {
@@ -338,15 +344,17 @@ TODO:
       + argument with custom schema
       - argument is an array of objects
       - argument with type parameters from constructor generic
+      - optional property
     + constructors with no arguments
     - constructors with 1 argument
     + constructors with multiple arguments
-  - class
-  - typedef
-  - abstract ?
+    - enum GADT
+  + class
+  + typedef
+  + abstract ?
   - basic schemas for core types (eg: thx.DateTimeUtc)
     + Any
-    - Date
+    + Date
     + DateTime
     + DateTimeUtc
     + LocalDate
@@ -354,33 +362,34 @@ TODO:
     + LocalYearMonth
     + Nel
     + Time
-    - TimePeriod
-    - Timestamp
+    + Timestamp
 
-    - Tuple (and friends)
-    - Map
-    - Ord
-    - Maybe
-    - ReadonlyArray
-    - Validation
-    - Weekday
+    + ReadonlyArray
+    + Tuple (and friends)
+
     - Uuid
     - Decimal
+    - BigInt
+    - Int64
+    - Rational
+    + Path
+    + Url
+    + QueryString
+
+    + Map
+    - Ord
+    - Maybe
+    - Validation
+    - Weekday
     - Char
     - BitMatrix
     - BitSet
-    - BigInt
-    - Rational
-    - Int64
-    - Path
-    - Url
-    - QueryString
     - Result
 
-    - HashSet
     - OrderedMap
     - OrderedSet
     - Set
+    - HashSet
     - Error and friends?
   + cases where E and String diverge
 */

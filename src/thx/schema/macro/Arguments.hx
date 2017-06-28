@@ -45,14 +45,16 @@ class Arguments {
 
   // TODO !!! allow registering new types?
   static var defaultTypeSchemas = [
-    "String" => macro thx.schema.SimpleSchema.string,
+    "Array" => macro thx.schema.SimpleSchema.array,
     "Bool" => macro thx.schema.SimpleSchema.bool,
+    "Date" => macro thx.schema.Core.date,
     "Float" => macro thx.schema.SimpleSchema.float,
     "Int" => macro thx.schema.SimpleSchema.int,
-    "Array" => macro thx.schema.SimpleSchema.array,
     "Map" => macro thx.schema.SimpleSchema.dict,
-    "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
     "Null" => macro thx.schema.SimpleSchema.makeNullable,
+    "String" => macro thx.schema.SimpleSchema.string,
+
+    "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
 
     // thx types
     "thx.Any" => macro thx.schema.SimpleSchema.any,
@@ -62,7 +64,11 @@ class Arguments {
     "thx.LocalMonthDay" => macro thx.schema.Core.localMonthDay,
     "thx.LocalYearMonth" => macro thx.schema.Core.localYearMonth,
     "thx.Nel" => macro thx.schema.Core.nel,
+    "thx.Path" => macro thx.schema.Core.path,
+    "thx.QueryString" => macro thx.schema.Core.queryString,
+    "thx.ReadonlyArray" => macro thx.schema.Core.readonlyArray,
     "thx.Time" => macro thx.schema.Core.time,
+    "thx.Url" => macro thx.schema.Core.url,
   ];
 
   static function exprToTypeSchemas(typeSchemas: Expr): Option<Map<String, Expr>> {
