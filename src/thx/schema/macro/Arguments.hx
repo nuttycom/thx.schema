@@ -50,8 +50,19 @@ class Arguments {
     "Float" => macro thx.schema.SimpleSchema.float,
     "Int" => macro thx.schema.SimpleSchema.int,
     "Array" => macro thx.schema.SimpleSchema.array,
+    "Map" => macro thx.schema.SimpleSchema.dict,
     "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
-    "Null" => macro thx.schema.SimpleSchema.makeNullable
+    "Null" => macro thx.schema.SimpleSchema.makeNullable,
+
+    // thx types
+    "thx.Any" => macro thx.schema.SimpleSchema.any,
+    "thx.DateTime" => macro thx.schema.Core.dateTime,
+    "thx.DateTimeUtc" => macro thx.schema.Core.dateTimeUtc,
+    "thx.LocalDate" => macro thx.schema.Core.localDate,
+    "thx.LocalMonthDay" => macro thx.schema.Core.localMonthDay,
+    "thx.LocalYearMonth" => macro thx.schema.Core.localYearMonth,
+    "thx.Nel" => macro thx.schema.Core.nel,
+    "thx.Time" => macro thx.schema.Core.time,
   ];
 
   static function exprToTypeSchemas(typeSchemas: Expr): Option<Map<String, Expr>> {

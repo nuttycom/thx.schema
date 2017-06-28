@@ -11,6 +11,7 @@ class TestAll {
     runner.addCase(new TestSchemaGenExtensions());
     runner.addCase(new TestSchemaSchema());
     runner.addCase(new TestGeneric());
+    runner.addCase(new TestCore());
     Report.create(runner);
     runner.run();
   }

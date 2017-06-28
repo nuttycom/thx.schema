@@ -1,19 +1,14 @@
 package thx.schema;
 
-import utest.Assert.*;
 import thx.schema.Generic.*;
 import thx.schema.SimpleSchema.*;
 import thx.schema.SchemaDSL.*;
-using thx.schema.SchemaDynamicExtensions;
 import thx.Either;
-import thx.Functions.identity;
 import haxe.ds.Option;
 
 import thx.schema.SimpleSchema;
 
-class TestGeneric {
-  public function new() {}
-
+class TestGeneric extends TestBase {
   public function testBasicType() {
     var f = schema(Int)();
     roundTripSchema(7, f);
@@ -159,15 +154,14 @@ class TestGeneric {
     roundTripSchema(thx.Path.fromString("/users/some/file"), s);
   }
 
-  function roundTripSchema<T>(v : T, schema : Schema<String, T>, ?pos: haxe.PosInfos) {
-    var r: Dynamic = schema.renderDynamic(v);
-    notNull(r);
-    switch schema.parseDynamic(identity, r) {
-      case Right(p):
-        same(v, p, 'expected $p to be equal to $v with serialized $r', pos);
-      case Left(e):
-        fail(e.toArray().join("\n").toString(), pos);
-    }
+  public function testMap() {
+    var s = schema(Map)(int());
+    roundTripSchema(["a" => 1, "b" => 2], s);
+  }
+
+  public function testClassWithReferenceToThxCoreTypes() {
+    var s = schema(ClassWithReferenceToThxCoreTypes)();
+    roundTripSchema(new ClassWithReferenceToThxCoreTypes(Nel.pure("a"), DateTimeUtc.fromString("2017-01-02")), s);
   }
 }
 
@@ -326,6 +320,15 @@ typedef IllegalTypedef = {
   f: Void -> Void
 }
 
+class ClassWithReferenceToThxCoreTypes {
+  public var nel: Nel<String>;
+  public var date: DateTimeUtc;
+  public function new(nel, date) {
+    this.nel = nel;
+    this.date = date;
+  }
+}
+
 /*
 TODO:
   - enum
@@ -342,15 +345,15 @@ TODO:
   - typedef
   - abstract ?
   - basic schemas for core types (eg: thx.DateTimeUtc)
-    - Any
+    + Any
     - Date
-    - DateTime
-    - DateTimeUtc
-    - LocalDate
-    - LocalMonthDay
-    - LocalYearMonth
-    - Nel
-    - Time
+    + DateTime
+    + DateTimeUtc
+    + LocalDate
+    + LocalMonthDay
+    + LocalYearMonth
+    + Nel
+    + Time
     - TimePeriod
     - Timestamp
 
