@@ -118,6 +118,35 @@ class Core {
       (v: thx.Url) -> v.toString()
     );
 
+  public static function intMap<T>(elementSchema: Schema<String, T>): Schema<String, Map<Int, T>>
+    return unsafeParseSchema(
+      thx.schema.SimpleSchema.dict(elementSchema),
+      function(m: Map<String, T>): Map<Int, T> {
+        var imap = new Map();
+        for(k in m.keys()) {
+          if(!thx.Ints.canParse(k)) throw "Unable to parse key `$k` to Int";
+          var ik = thx.Ints.parse(k);
+          imap.set(ik, m.get(k));
+        }
+        return imap;
+      },
+      function(m: Map<Int, T>): Map<String, T> {
+        var smap = new Map();
+        for(ik in m.keys())
+          smap.set('$ik', m.get(ik));
+        return smap;
+      }
+    );
+
+  public static function map<Key, Element>(keySchema: Schema<String, Key>, elementSchema: Schema<String, Element>): Schema<String, Map<Key, Element>> {
+    if(untyped keySchema.schema == thx.schema.SchemaF.StrSchema) {
+      return cast thx.schema.SimpleSchema.dict(elementSchema);
+    } else if(untyped keySchema.schema == thx.schema.SchemaF.IntSchema) {
+      return cast thx.schema.Core.intMap(elementSchema);
+    } else {
+      return throw 'Map schema at the moment can only have String or Int keys.';
+    }
+  }
 
   // utils
   static function unsafeStringParseSchema<T>(unsafeParse: String -> T, render: T -> String): Schema<String, T>

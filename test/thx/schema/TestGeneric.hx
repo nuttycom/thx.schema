@@ -155,8 +155,14 @@ class TestGeneric extends TestBase {
   }
 
   public function testMap() {
-    var s = schema(Map)(int());
+    // this is runtime reflection unfortunaly because Map are magic
+    var s = schema(Map)(string(), int());
     roundTripSchema(["a" => 1, "b" => 2], s);
+  }
+
+  public function testIntMap() {
+    var s = schema(Map)(int(), string());
+    roundTripSchema([1 => "a", 2 => "b"], s);
   }
 
   public function testClassWithReferenceToThxCoreTypes() {
@@ -169,7 +175,36 @@ class TestGeneric extends TestBase {
     roundTripSchema(thx.Timestamp.fromString("2015-03-29"), timestamp());
     failDeserialization('x', timestamp());
   }
+
+  public function testMaybe() {
+    var s = schema(thx.Maybe)(int());
+    roundTripSchema(Maybe.of(1), s);
+    roundTripSchema(Maybe.none(), s);
+  }
+
+  public function testTypeWithMaybe() {
+    var s = schema(TypeWithMaybe)();
+    roundTripSchema({ a: Maybe.of(1) }, s);
+    roundTripSchema({ a: Maybe.none() }, s);
+  }
+
+  public function testTypeWithMapDef() {
+    var s = schema(TypeWithMap)(int());
+    roundTripSchema({ a: ["a" => 1] }, s);
+  }
+
+  // TODO
+  // public function testGadt() {
+  //   var s = schema(GADT)();
+  //   roundTripSchema(A(1), s);
+  //   roundTripSchema(B("b"), s);
+  // }
 }
+
+typedef TypeWithMapDef = { a: Map<String, Int> };
+typedef TypeWithMap<T> = { a: Map<String, T> };
+typedef TypeWithMapInt = { a: Map<String, Int> };
+typedef TypeWithMaybe = { a: thx.Maybe<Int> };
 
 class SimpleClass {
   var a: String;
@@ -297,6 +332,11 @@ enum Case2 {
   B(di: MyInt, z: haxe.ds.Option<String>);
 }
 
+enum GADT<T> {
+  A(a: T): GADT<Int>;
+  B(b: T): GADT<String>;
+}
+
 typedef MyInt = { i: Int };
 class MyInts {
   public static function schema(): Schema<String, MyInt> {
@@ -376,15 +416,10 @@ TODO:
     + QueryString
 
     + Map
-    - Ord
-    - Maybe
-    - Validation
-    - Weekday
-    - Char
+    + Maybe
+
     - BitMatrix
     - BitSet
-    - Result
-
     - OrderedMap
     - OrderedSet
     - Set

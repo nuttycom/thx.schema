@@ -10,7 +10,7 @@ class TestBase {
 
   function roundTripSchema<T>(v: T, schema: Schema<String, T>, ?pos: haxe.PosInfos) {
     var r: Dynamic = schema.renderDynamic(v);
-    trace(r);
+    // trace(r);
     notNull(r);
     switch schema.parseDynamic(identity, r) {
       case Right(p):

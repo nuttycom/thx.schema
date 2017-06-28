@@ -50,7 +50,7 @@ class Arguments {
     "Date" => macro thx.schema.Core.date,
     "Float" => macro thx.schema.SimpleSchema.float,
     "Int" => macro thx.schema.SimpleSchema.int,
-    "Map" => macro thx.schema.SimpleSchema.dict,
+    "Map" => macro thx.schema.Core.map,
     "Null" => macro thx.schema.SimpleSchema.makeNullable,
     "String" => macro thx.schema.SimpleSchema.string,
 

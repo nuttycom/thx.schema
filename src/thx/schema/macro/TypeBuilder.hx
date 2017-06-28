@@ -77,6 +77,7 @@ class TypeBuilder {
       generated.push(identifier);
       var module = getModuleName(identifier);
       var typeDefinition = generateTypeDefinition(identifier, schemaType, typeSchemas);
+      // trace(new haxe.macro.Printer().printTypeDefinition(typeDefinition));
       Context.defineModule(module, [typeDefinition]);
     }
     return getPath(identifier);
