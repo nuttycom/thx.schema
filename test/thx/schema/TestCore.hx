@@ -4,14 +4,8 @@ import thx.schema.SimpleSchema.*;
 import thx.schema.Core.*;
 
 class TestCore extends TestBase {
-  public function testNel() {
-    roundTripSchema(Nel.pure("a"), nel(string()));
-    failDeserialization([], nel(string()));
-  }
-
-  public function testJson() {
-    roundTripSchema({"a": "b", "c": [1,2,3] }, json());
-    failDeserialization('{a:"b"}', json());
+  public function testBigInt() {
+    roundTripSchema(thx.BigInt.fromString('123434534534534'), bigInt());
   }
 
   public function testDate() {
@@ -29,6 +23,15 @@ class TestCore extends TestBase {
     failDeserialization('x', dateTimeUtc());
   }
 
+  public function testDecimal() {
+    roundTripSchema(thx.Decimal.fromString("123434534534534.0002342"), decimal());
+  }
+
+  public function testInt64() {
+    roundTripSchema(haxe.Int64.parseString('123434534534'), int64());
+    failDeserialization('x', int64());
+  }
+
   public function testLocalDate() {
     roundTripSchema(thx.LocalDate.fromString("2015-03-29"), localDate());
     failDeserialization('x', localDate());
@@ -44,24 +47,38 @@ class TestCore extends TestBase {
     failDeserialization('x', localYearMonth());
   }
 
-  public function testTime() {
-    roundTripSchema(thx.Time.fromString("25:30:58.0123"), time());
-    failDeserialization('x', time());
+  public function testJson() {
+    roundTripSchema({"a": "b", "c": [1,2,3] }, json());
+    failDeserialization('{a:"b"}', json());
+  }
+
+  public function testNel() {
+    roundTripSchema(Nel.pure("a"), nel(string()));
+    failDeserialization([], nel(string()));
   }
 
   public function testPath() {
     roundTripSchema(thx.Path.fromString("/some/path"), path());
   }
 
-  public function testUrl() {
-    roundTripSchema(thx.Url.fromString("http://google.com/?q=yay"), url());
-  }
-
   public function testQueryString() {
     roundTripSchema(thx.QueryString.parse("q=yay"), queryString());
   }
 
+  public function testRational() {
+    roundTripSchema(thx.Rational.fromString('10/3'), rational());
+  }
+
   public function testReadonlyArray() {
     roundTripSchema(([1,2,3] : thx.ReadonlyArray<Int>), readonlyArray(int()));
+  }
+
+  public function testTime() {
+    roundTripSchema(thx.Time.fromString("25:30:58.0123"), time());
+    failDeserialization('x', time());
+  }
+
+  public function testUrl() {
+    roundTripSchema(thx.Url.fromString("http://google.com/?q=yay"), url());
   }
 }

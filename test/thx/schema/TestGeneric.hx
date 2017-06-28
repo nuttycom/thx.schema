@@ -367,11 +367,10 @@ TODO:
     + ReadonlyArray
     + Tuple (and friends)
 
-    - Uuid
-    - Decimal
-    - BigInt
-    - Int64
-    - Rational
+    + Decimal
+    + BigInt
+    + Int64
+    + Rational
     + Path
     + Url
     + QueryString

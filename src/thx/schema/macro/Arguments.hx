@@ -54,18 +54,22 @@ class Arguments {
     "Null" => macro thx.schema.SimpleSchema.makeNullable,
     "String" => macro thx.schema.SimpleSchema.string,
 
+    "haxe.Int64" => macro thx.schema.Core.int64,
     "haxe.ds.Option" => macro thx.schema.SimpleSchema.makeOptional,
 
     // thx types
     "thx.Any" => macro thx.schema.SimpleSchema.any,
+    "thx.BigInt" => macro thx.schema.SimpleSchema.bigInt,
     "thx.DateTime" => macro thx.schema.Core.dateTime,
     "thx.DateTimeUtc" => macro thx.schema.Core.dateTimeUtc,
+    "thx.Decimal" => macro thx.schema.Core.decimal,
     "thx.LocalDate" => macro thx.schema.Core.localDate,
     "thx.LocalMonthDay" => macro thx.schema.Core.localMonthDay,
     "thx.LocalYearMonth" => macro thx.schema.Core.localYearMonth,
     "thx.Nel" => macro thx.schema.Core.nel,
     "thx.Path" => macro thx.schema.Core.path,
     "thx.QueryString" => macro thx.schema.Core.queryString,
+    "thx.Rational" => macro thx.schema.Core.rational,
     "thx.ReadonlyArray" => macro thx.schema.Core.readonlyArray,
     "thx.Time" => macro thx.schema.Core.time,
     "thx.Url" => macro thx.schema.Core.url,
