@@ -8,11 +8,13 @@ import haxe.ds.Option;
 class Arguments {
   /**
    *  Generates a schema from the type passed as the first argument.
-   *  @param typeRef
-   *  @param ?typeSchemas
-   *  @param ?identifier
+   *  @param typeRef:      type path identifier (ex: `thx.Tuple`) or anonymous structure type (ex: `{ name: String }`).
+   *  @param ?typeSchemas: Array of functions returning a `thx.schema.SimpleSchema.Schema` type. The arity of the function
+   *                       depends on the number of type parameters associated with the type.
+   *  @param ?identifier:  By default the type generated to host the schema is named after the type itself. This parameter
+   *                       allows to override such name.
    */
-  public static function parseArguments(exprs: Array<Expr>) {
+  public static function parseArguments(exprs: Array<Expr>): { typeSchema: UnboundSchemaType, typeSchemas: Map<String, Expr> } {
     var typeSchema  = null,
         typeSchemas = new Map();
 
@@ -84,6 +86,7 @@ class Arguments {
     }
     switch typeSchemas.expr {
       case EConst(CIdent("null")):
+        // the argument is not passed at all
       case EArrayDecl(arr):
         for(item in arr) {
           switch Context.typeof(item) {
@@ -92,11 +95,11 @@ class Arguments {
             case TFun(_, TType(_.toString() => stype, [_, t])) if(stype == "thx.schema.Schema"):
               map.set(typeToString(t), normalizeExpr(item));
             case _:
-              None;
+              return None;
           }
         }
       case _:
-        None;
+        return None;
     }
     return Some(map);
   }

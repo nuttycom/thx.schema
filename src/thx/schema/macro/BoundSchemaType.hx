@@ -37,13 +37,11 @@ class BoundSchemaType {
     return new BoundSchemaType(LocalParam(param));
 
   public static function fromTypeOrTypeParam(type: Type, params: Array<BoundSchemaType>) {
-    var names = params.map(p -> p.toString());
-    function resolve(t: Type) return switch t {
+    function resolve(t: Type): Type return switch t {
       case TLazy(f): f();
       case other: other;
     }
-    type = resolve(type);
-    return fromType(type);
+    return fromType(resolve(type));
   }
 
   public static function fromType(type: Type): BoundSchemaType {
@@ -66,7 +64,7 @@ class BoundSchemaType {
       case TLazy(f):
         fromType(f());
       case _:
-        throw 'Unable to convert type to BoundSchemaType: $type';
+        fatal('Unable to convert type to BoundSchemaType: $type');
     }
   }
 
@@ -96,7 +94,7 @@ class BoundSchemaType {
     return createTypeDef(new QualifiedType(t.pack, t.module, t.name, params));
   }
 
-  public var type: BoundSchemaTypeImpl;
+  public var type(default, null): BoundSchemaTypeImpl;
   public function new(type: BoundSchemaTypeImpl) {
     this.type = type;
   }

@@ -6,10 +6,10 @@ import haxe.macro.Type;
 using thx.Strings;
 
 class QualifiedType<T> {
-  public var pack: Array<String>;
-  public var module: String;
-  public var name: String;
-  public var params: Array<T>;
+  public var pack(default, null): Array<String>;
+  public var module(default, null): String;
+  public var name(default, null): String;
+  public var params(default, null): Array<T>;
   public function new(pack: Array<String>, module: String, name: String, params: Array<T>) {
     this.pack = pack;
     this.module = module.split(".").pop();

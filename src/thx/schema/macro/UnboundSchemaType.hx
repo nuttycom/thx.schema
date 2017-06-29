@@ -145,7 +145,7 @@ class UnboundSchemaType {
     });
   }
 
-  public var type: UnboundSchemaTypeImpl;
+  public var type(default, null): UnboundSchemaTypeImpl;
   public function new(type: UnboundSchemaTypeImpl) {
     this.type = type;
   }

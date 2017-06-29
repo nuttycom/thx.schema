@@ -12,8 +12,8 @@ class AnonObject<T> {
   public static function fromEnumArgs<T>(args: Array<{ t: Type, opt: Bool, name: String }>): AnonObject<T>
     return new AnonObject(args.map(AnonField.fromEnumArg), []);
 
-  public var fields: Array<AnonField>;
-  public var params: Array<T>;
+  public var fields(default, null): Array<AnonField>;
+  public var params(default, null): Array<T>;
   public function new(fields: Array<AnonField>, params: Array<T>) {
     this.fields = fields;
     this.params = params;

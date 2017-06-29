@@ -88,6 +88,12 @@ class TestGeneric extends TestBase {
     roundTripSchema(Case1.P(Some(Case1.P(None))), schema);
   }
 
+  public function testMyIntsAsSchemaValue() {
+    var schemaf = schema(Case1, [ MyInts.schema() ]),
+        schema = schemaf(string(), int());
+    roundTripSchema(Case1.A, schema);
+  }
+
   public function testEither() {
     var schema = schema(thx.Either)(int(), string());
     roundTripSchema(Left(1), schema);
