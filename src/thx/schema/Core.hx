@@ -7,61 +7,61 @@ import thx.Nel;
 
 class Core {
   public static function bigInt(): Schema<String, thx.BigInt>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.BigInt.fromString,
       (v: thx.BigInt) -> v.toString()
     );
 
   public static function date(): Schema<String, Date>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       Date.fromString,
       (v: Date) -> v.toString()
     );
 
   public static function dateTime(): Schema<String, thx.DateTime>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.DateTime.fromString,
       (v: thx.DateTime) -> v.toString()
     );
 
   public static function dateTimeUtc(): Schema<String, thx.DateTimeUtc>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.DateTimeUtc.fromString,
       (v: thx.DateTimeUtc) -> v.toString()
     );
 
   public static function decimal(): Schema<String, thx.Decimal>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.Decimal.fromString,
       (v: thx.Decimal) -> v.toString()
     );
 
   public static function int64(): Schema<String, haxe.Int64>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       haxe.Int64.parseString,
       (v: haxe.Int64) -> haxe.Int64.toStr(v)
     );
 
   public static function json<JSON>(): Schema<String, JSON>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       haxe.Json.parse,
       (v: JSON) -> haxe.Json.stringify(v)
     );
 
   public static function localDate(): Schema<String, thx.LocalDate>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.LocalDate.fromString,
       (v: thx.LocalDate) -> v.toString()
     );
 
   public static function localMonthDay(): Schema<String, thx.LocalMonthDay>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.LocalMonthDay.fromString,
       (v: thx.LocalMonthDay) -> v.toString()
     );
 
   public static function localYearMonth(): Schema<String, thx.LocalYearMonth>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.LocalYearMonth.fromString,
       (v: thx.LocalYearMonth) -> v.toString()
     );
@@ -82,19 +82,19 @@ class Core {
   }
 
   public static function path(): Schema<String, thx.Path>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.Path.fromString,
       (v: thx.Path) -> v.toString()
     );
 
   public static function queryString(): Schema<String, thx.QueryString>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.QueryString.parse,
       (v: thx.QueryString) -> v.toString()
     );
 
   public static function rational(): Schema<String, thx.Rational>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.Rational.fromString,
       (v: thx.Rational) -> v.toString()
     );
@@ -107,19 +107,19 @@ class Core {
     );
 
   public static function time(): Schema<String, thx.Time>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.Time.fromString,
       (v: thx.Time) -> v.toString()
     );
 
   public static function url(): Schema<String, thx.Url>
-    return unsafeStringParseSchema(
+    return catchStringParseSchema(
       thx.Url.fromString,
       (v: thx.Url) -> v.toString()
     );
 
   public static function intMap<T>(elementSchema: Schema<String, T>): Schema<String, Map<Int, T>>
-    return unsafeParseSchema(
+    return catchParseSchema(
       thx.schema.SimpleSchema.dict(elementSchema),
       function(m: Map<String, T>): Map<Int, T> {
         var imap = new Map();
@@ -149,10 +149,10 @@ class Core {
   }
 
   // utils
-  static function unsafeStringParseSchema<T>(unsafeParse: String -> T, render: T -> String): Schema<String, T>
-    return unsafeParseSchema(string(), unsafeParse, render);
+  static function catchStringParseSchema<T>(unsafeParse: String -> T, render: T -> String): Schema<String, T>
+    return catchParseSchema(string(), unsafeParse, render);
 
-  static function unsafeParseSchema<T, Serialized>(schema: Schema<String, Serialized>, unsafeParse: Serialized -> T, render: T -> Serialized) {
+  static function catchParseSchema<T, Serialized>(schema: Schema<String, Serialized>, unsafeParse: Serialized -> T, render: T -> Serialized) {
     return liftS(
       ParseSchema(
         schema.schema,
