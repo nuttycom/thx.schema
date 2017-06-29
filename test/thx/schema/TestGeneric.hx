@@ -189,8 +189,36 @@ class TestGeneric extends TestBase {
   }
 
   public function testTypeWithMapDef() {
+    var s = schema(TypeWithMapDef)();
+    roundTripSchema({ a: ["a" => 1] }, s);
+  }
+
+  public function testTypeWithMap() {
     var s = schema(TypeWithMap)(int());
     roundTripSchema({ a: ["a" => 1] }, s);
+  }
+
+  public function testTypeWithMapInt() {
+    var s = schema(TypeWithMapInt)();
+    roundTripSchema({ a: ["a" => 1] }, s);
+  }
+
+  public function testOptionField() {
+    var s = schema(WithOption)(float());
+    roundTripSchema({ opt: None }, s);
+    roundTripSchema({ opt: Some(0.1) }, s);
+  }
+
+  public function testNullableField() {
+    var s = schema(WithNullable)(float());
+    roundTripSchema({ nullable: null }, s);
+    roundTripSchema({ nullable: 0.1 }, s);
+  }
+
+  public function testMaybeield() {
+    var s = schema(WithMaybe)(float());
+    roundTripSchema({ maybe: thx.Maybe.none() }, s);
+    roundTripSchema({ maybe: thx.Maybe.of(0.1) }, s);
   }
 
   // TODO
@@ -199,6 +227,18 @@ class TestGeneric extends TestBase {
   //   roundTripSchema(A(1), s);
   //   roundTripSchema(B("b"), s);
   // }
+}
+
+typedef WithOption<T> = {
+  opt: Option<T>
+}
+
+typedef WithNullable<T> = {
+  nullable: Null<T>
+}
+
+typedef WithMaybe<T> = {
+  maybe: thx.Maybe<T>
 }
 
 typedef TypeWithMapDef = { a: Map<String, Int> };

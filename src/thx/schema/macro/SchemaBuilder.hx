@@ -235,12 +235,52 @@ class SchemaBuilder {
   }
 
   static function createProperty(qtype: BoundSchemaType, argType: BoundSchemaType, argName: String, typeSchemas: Map<String, Expr>): Expr {
-    var schema = resolveSchema(argType, typeSchemas),
-        containerType = qtype.toComplexType(),
-        type = argType.toComplexType();
-    return macro thx.schema.SchemaDSL.required($v{argName}, $schema, (v : $containerType) -> (Reflect.field(v, $v{argName}): $type));
+    var containerType = qtype.toComplexType();
+    if(argType.toString() == "haxe.ds.Option") {
+      var paramType = argType.parameters()[0];
+      var type = paramType.toComplexType();
+      var schema = resolveSchema(paramType, typeSchemas);
+      // trace(ExprTools.toString(schema));
+      return macro thx.schema.SchemaDSL.optional(
+        $v{argName},
+        thx.schema.SimpleSchema.lazy(() -> $schema.schema),
+        (v : $containerType) -> (Reflect.field(v, $v{argName}): haxe.ds.Option<$type>)
+      );
+
+    // } else if(argType.toString() == "Null") {
+    //   var paramType = argType.parameters()[0];
+    //   var type = paramType.toComplexType();
+    //   var schema = resolveSchema(paramType, typeSchemas);
+    //   // trace(paramType);
+
+    //   trace(argName);
+    //   trace(ExprTools.toString(schema));
+    //   trace(type);
+    //   // trace(containerType);
+    //   var r = macro thx.schema.SchemaDSL.nullable(
+    //     $v{argName},
+    //     thx.schema.SimpleSchema.lazy(() -> $schema.schema),
+    //     // (v : $containerType) -> (thx.Options.ofValue(Reflect.field(v, $v{argName})): haxe.ds.Option<$type>)
+    //     (v) -> (Reflect.field(v, $v{argName}) : Null<$type>)
+    //   );
+    //   trace(ExprTools.toString(r));
+    //   return r;
+    } else {
+      var type = argType.toComplexType();
+      var schema = resolveSchema(argType, typeSchemas);
+      return macro thx.schema.SchemaDSL.required(
+        $v{argName},
+        $schema,
+        (v : $containerType) -> (Reflect.field(v, $v{argName}) : $type)
+      );
+    }
   }
 }
+
+/*
+  public static function optional<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Option<A>): PropsBuilder<E, X, O, Option<A>>
+    return liftPS(Optional(fieldName, valueSchema, accessor));
+*/
 
 typedef FunctionArgument = {
   ctype: Null<ComplexType>,
