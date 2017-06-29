@@ -1,8 +1,9 @@
 package thx.schema;
 
-import thx.Options;
+import thx.Functions.identity;
 import thx.Nel;
 import thx.Nothing;
+import thx.Options;
 import thx.Validation;
 import thx.Validation.*;
 import thx.fp.Dynamics;
@@ -46,6 +47,7 @@ class SchemaGenExtensions {
       case ArraySchema(elemSchema):   [exemplar(elemSchema)];
       case MapSchema(elemSchema):     ["" => exemplar(elemSchema)];
       case LazySchema(delay):         exemplar0(delay());
+      case MetaSchema(p, ms, f, _):   exemplar0(ObjectSchema(f(exemplar0(ms.schema))));
     }
   } 
 

@@ -38,6 +38,10 @@ enum SchemaF<E, X, A> {
   // value type.
   ParseSchema<B, C>(base: SchemaF<E, X, B>, f: B -> ParseResult<E, B, C>, g: C -> B): SchemaF<E, X, C>;
 
+  // Allow objects where the value of a specified property can be interpreted to generate 
+  // schema for the remaining properties.
+  MetaSchema<B, C>(metaProp: String, metaSchema: AnnotatedSchema<E, X, B>, valueProps: B -> ObjectBuilder<E, X, C>, metaf: C -> B): SchemaF<E, X, C>;
+
   // lazy wrapper for schema values to permit recursive schema definitions.
   LazySchema<B>(delay: Void -> SchemaF<E, X, B>): SchemaF<E, X, B>;
 }

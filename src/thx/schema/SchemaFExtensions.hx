@@ -33,8 +33,9 @@ class SchemaFExtensions {
       case ArraySchema(elemSchema):   ArraySType;
       case MapSchema(elemSchema):     MapSType;
       case OneOfSchema(alternatives): OneOfSType;
-      case ParseSchema(base, f, g): stype(base);
-      case LazySchema(base): stype(base()); // could diverge?
+      case ParseSchema(base, f, g):   stype(base);
+      case LazySchema(base):          stype(base()); // could diverge?
+      case MetaSchema(_, _, _, _):    ObjectSType;   // all MetaSchema build objects
     };
 
   public static function isConstant<E, X, A>(schema: SchemaF<E, X, A>): Bool
@@ -59,6 +60,7 @@ class SchemaFExtensions {
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapAnnotation.bind(_, f)));
       case ParseSchema(base, p, q):   ParseSchema(mapAnnotation(base, f), p, q);
       case LazySchema(base):          LazySchema(function() return mapAnnotation(base(), f));
+      case MetaSchema(p, ms, sf, g):  MetaSchema(p, ms.mapAnnotation(f), b -> ObjectSchemaExtensions.mapAnnotation(sf(b), f), g);
     }
   }
 
@@ -76,6 +78,7 @@ class SchemaFExtensions {
       case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.mapError.bind(_, e)));
       case ParseSchema(base, f, g):   ParseSchema(mapError(base, e), function(b) return ParseResultExtensions.mapError(f(b), e), g);
       case LazySchema(base):          LazySchema(function() return mapError(base(), e));
+      case MetaSchema(p, ms, sf, g):  MetaSchema(p, ms.mapError(e), b -> ObjectSchemaExtensions.mapError(sf(b), e), g);
     };
   }
 }
