@@ -40,7 +40,6 @@ class SchemaDSLM {
     var fields = getFields(obj);
     var objectType = getObjectType(fields);
     var args = [constrObj(fields, objectType, Context.currentPos())].concat(fields.map(function(field) {
-      // TODO optional vs required?
       var name = field.name,
           expr = field.expr,
           ftype = field.ctype;
@@ -54,7 +53,7 @@ class SchemaDSLM {
 
   static function isSchema(e: Expr) {
     return switch Context.typeof(e) {
-      case TEnum(_, [_, _, type]): true; // TODO make the match stricter
+      case TEnum(_, [_, _, type]): true;
       case TFun(_, TEnum(_, [_, _, type])): true;
       case _: false;
     };
