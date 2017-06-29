@@ -2,6 +2,9 @@ package thx.schema;
 
 import haxe.ds.Option;
 import thx.Either;
+import thx.fp.Functions.const;
+using thx.Eithers;
+using thx.Functions;
 
 import utest.Assert;
 
@@ -11,8 +14,6 @@ import thx.schema.SchemaDSL.*;
 
 using thx.schema.SchemaFExtensions;
 using thx.schema.SchemaDynamicExtensions;
-using thx.Eithers;
-using thx.Functions;
 
 class TSimple {
   public var x: Int;
@@ -215,6 +216,25 @@ class TestSchema {
         'failed with $v'
       );
     }
+  }
+
+  public function testParseVersioned() {
+    var schema = meta(
+      "version", string(),
+      (version: String) -> return switch version {
+        case "1.0": required("x", int(), function(ts: TSimple) return ts.x).map(TSimple.new);
+        case "2.0": required("xenophon", int(), function(ts: TSimple) return ts.x).map(TSimple.new);
+        case _: Pure(new TSimple(3));
+      },
+      const("2.0")
+    );
+
+    var oldV = { version: "1.0", x: 1 };
+    var newV = { version: "2.0", xenophon: 1 };
+    var expected = new TSimple(1);
+    Assert.same(Right(expected), schema.parseDynamic(serr, oldV));
+    Assert.same(Right(expected), schema.parseDynamic(serr, newV));
+    Assert.same(Right(newV), schema.parseDynamic(serr, oldV).map(schema.renderDynamic));
   }
 }
 

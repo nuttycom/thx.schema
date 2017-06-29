@@ -44,6 +44,9 @@ class SimpleSchema {
   public static function lazy<E, A>(base: Void -> SchemaF<E, Unit, A>): Schema<E, A>
     return liftS(LazySchema(base));
 
+  public static function meta<E, M, A>(metaProp: String, metaSchema: Schema<E, M>, valueProps: M -> ObjectBuilder<E, Unit, A>, metaf: A -> M): Schema<E, A>
+    return liftS(MetaSchema(metaProp, metaSchema, valueProps, metaf));
+
   //
   // Constructors for oneOf alternatives
   //
