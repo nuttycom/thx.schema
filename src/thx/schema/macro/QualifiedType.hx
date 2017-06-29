@@ -34,7 +34,7 @@ class QualifiedType<T> {
     return parts().join("_").upperCaseFirst();
 
   public function toType(): Type
-    return Context.getType(toString()); // TODO !!! sufficient?
+    return Context.getType(toString());
 
   public function toComplexType(f: T -> ComplexType): ComplexType {
     return TPath({

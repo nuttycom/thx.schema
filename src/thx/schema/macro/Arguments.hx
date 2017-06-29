@@ -43,7 +43,6 @@ class Arguments {
     };
   }
 
-  // TODO !!! allow registering new types?
   static var defaultTypeSchemas = [
     "Array" => macro thx.schema.SimpleSchema.array,
     "Bool" => macro thx.schema.SimpleSchema.bool,

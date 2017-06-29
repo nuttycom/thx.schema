@@ -61,7 +61,7 @@ class Utils {
       superClass: null,
       exclude: function() {},
       overrides: null
-    }), []); // TODO
+    }), []);
   }
 
   public static function keepVariables(f: ClassField): Bool {

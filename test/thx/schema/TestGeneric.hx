@@ -215,7 +215,7 @@ class TestGeneric extends TestBase {
     roundTripSchema({ nullable: 0.1 }, s);
   }
 
-  public function testMaybeield() {
+  public function testMaybeField() {
     var s = schema(WithMaybe)(float());
     roundTripSchema({ maybe: thx.Maybe.none() }, s);
     roundTripSchema({ maybe: thx.Maybe.of(0.1) }, s);
@@ -414,56 +414,3 @@ class ClassWithReferenceToThxCoreTypes {
     this.date = date;
   }
 }
-
-/*
-TODO:
-  - enum
-    - cases for constructors
-      + optional argument
-      + argument with explicit type parameters
-      + argument with custom schema
-      - argument is an array of objects
-      - argument with type parameters from constructor generic
-      - optional property
-    + constructors with no arguments
-    - constructors with 1 argument
-    + constructors with multiple arguments
-    - enum GADT
-  + class
-  + typedef
-  + abstract ?
-  - basic schemas for core types (eg: thx.DateTimeUtc)
-    + Any
-    + Date
-    + DateTime
-    + DateTimeUtc
-    + LocalDate
-    + LocalMonthDay
-    + LocalYearMonth
-    + Nel
-    + Time
-    + Timestamp
-
-    + ReadonlyArray
-    + Tuple (and friends)
-
-    + Decimal
-    + BigInt
-    + Int64
-    + Rational
-    + Path
-    + Url
-    + QueryString
-
-    + Map
-    + Maybe
-
-    - BitMatrix
-    - BitSet
-    - OrderedMap
-    - OrderedSet
-    - Set
-    - HashSet
-    - Error and friends?
-  + cases where E and String diverge
-*/

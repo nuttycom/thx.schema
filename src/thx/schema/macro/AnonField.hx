@@ -22,7 +22,7 @@ class AnonField {
       kind: FVar(AccNormal, AccNormal),
       meta: null,
       name: name,
-      params: [], // TODO ???
+      params: [],
       pos: Context.currentPos(),
       type: type.toType(),
       expr: null,

@@ -34,9 +34,6 @@ class SchemaDSL {
   public static function optional<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Option<A>): PropsBuilder<E, X, O, Option<A>>
     return liftPS(Optional(fieldName, valueSchema, accessor));
 
-  public static function nullable<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Null<A>): PropsBuilder<E, X, O, Option<A>>
-    return liftPS(Optional(fieldName, valueSchema, function(v) return thx.Options.ofValue(accessor(v))));
-
   public static function property<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A, dflt: A): PropsBuilder<E, X, O, A>
     return liftPS(Required(fieldName, valueSchema, accessor, Some(dflt)));
 

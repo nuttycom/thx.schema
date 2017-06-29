@@ -10,7 +10,7 @@ class AnonObject<T> {
   static var anonymMap: Map<String, Int> = new Map();
 
   public static function fromEnumArgs<T>(args: Array<{ t: Type, opt: Bool, name: String }>): AnonObject<T>
-    return new AnonObject(args.map(AnonField.fromEnumArg), []); // TODO constructor params
+    return new AnonObject(args.map(AnonField.fromEnumArg), []);
 
   public var fields: Array<AnonField>;
   public var params: Array<T>;

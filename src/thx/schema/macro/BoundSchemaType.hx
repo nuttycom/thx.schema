@@ -88,7 +88,7 @@ class BoundSchemaType {
 
   static function fromAnonType(t: AnonType): BoundSchemaType {
     var fields = t.fields.map(field -> new AnonField(field.name, BoundSchemaType.fromType(field.type)));
-    return createAnonFromFields(fields, []); // TODO ???
+    return createAnonFromFields(fields, []);
   }
 
   static function fromDefType(t: DefType, p: Array<Type>): BoundSchemaType {
@@ -104,7 +104,7 @@ class BoundSchemaType {
   public function toComplexType(): ComplexType {
     return switch type {
       case QualifiedType(type): type.toComplexType(t -> t.toComplexType());
-      case AnonObject(obj): obj.toComplexType(); // TODO ???
+      case AnonObject(obj): obj.toComplexType();
       case LocalParam(param): paramAsComplexType(param);
       case TypeDef(type): type.toComplexType(t -> t.toComplexType());
     };
@@ -113,7 +113,7 @@ class BoundSchemaType {
   public function toType(): Type {
     return switch type {
       case QualifiedType(type): type.toType();
-      case AnonObject(obj): obj.toType(); // TODO ???
+      case AnonObject(obj): obj.toType();
       case LocalParam(param): paramAsType(param);
       case TypeDef(type): type.toType();
     };
@@ -123,14 +123,14 @@ class BoundSchemaType {
     return switch type {
       case QualifiedType(type): type.params;
       case AnonObject(obj): obj.params;
-      case LocalParam(param): []; // TODO !!!
+      case LocalParam(param): [];
       case TypeDef(type): type.params;
     };
 
   public function toString(): String return switch type {
     case QualifiedType(type): type.toString();
     case AnonObject(obj): obj.toString();
-    case LocalParam(param): param; // TODO !!!
+    case LocalParam(param): param;
     case TypeDef(type): type.toString();
   }
 
@@ -142,7 +142,7 @@ class BoundSchemaType {
         UnboundSchemaType.fromType(type.toType());
       case AnonObject(obj):
         var p = (null == params ? obj.params : params).map(p -> p.toString());
-        UnboundSchemaType.createAnonFromFields(obj.fields, p); // TODO !!! complete?
+        UnboundSchemaType.createAnonFromFields(obj.fields, p);
     };
   }
 }

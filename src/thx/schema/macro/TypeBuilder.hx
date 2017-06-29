@@ -72,7 +72,6 @@ class TypeBuilder {
   public static var generated = [];
   public static function ensure(schemaType: UnboundSchemaType, typeSchemas: Map<String, Expr>, ?identifier: String): Array<String> {
     if(null == identifier) identifier = schemaType.toIdentifier();
-    // TODO !!! check compilation with server
     if(!generated.contains(identifier)) {
       generated.push(identifier);
       var module = getModuleName(identifier);
