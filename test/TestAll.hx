@@ -1,6 +1,5 @@
 import utest.Runner;
 import utest.ui.Report;
-import utest.Assert;
 
 import thx.schema.*;
 
@@ -11,6 +10,8 @@ class TestAll {
     runner.addCase(new TestSchemaDynamicExtensions());
     runner.addCase(new TestSchemaGenExtensions());
     runner.addCase(new TestSchemaSchema());
+    runner.addCase(new TestGeneric());
+    runner.addCase(new TestCore());
     Report.create(runner);
     runner.run();
   }
