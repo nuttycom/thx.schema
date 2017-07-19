@@ -135,7 +135,16 @@ class TestSchema {
     Assert.same(Right(1), float().parseDynamic(serr, 1));
     Assert.same(Right(1.5), float().parseDynamic(serr, 1.5));
     Assert.same(Right(1.5), float().parseDynamic(serr, "1.5"));
+    Assert.isTrue(float().parseDynamic(serr, "NaN").either.exists(Math.isNaN));
+    Assert.isFalse(float().parseDynamic(serr, "Inf").either.forall(a -> Math.isFinite(a) || Math.isNaN(a)));
     Assert.isTrue(float().parseDynamic(serr, "xadf").either.isLeft());
+  }
+
+  public function testRenderFloat() {
+    Assert.same(1.23, float().renderDynamic(1.23));
+    Assert.same("NaN", float().renderDynamic(Math.NaN));
+    Assert.same("Inf", float().renderDynamic(Math.POSITIVE_INFINITY));
+    Assert.same("-Inf", float().renderDynamic(Math.NEGATIVE_INFINITY));
   }
 
   public function testParseBool() {

@@ -150,7 +150,13 @@ class SchemaDynamicExtensions {
   public static function renderDynamic0<E, X, A>(schemaf: SchemaF<E, X, A>, value: A): Dynamic {
     return switch schemaf {
       case IntSchema:   value;
-      case FloatSchema: value;
+
+      case FloatSchema: 
+        if (Math.isFinite(value)) value
+        else if (Math.isNaN(value)) "NaN"
+        else if (value > 0) "Inf";
+        else "-Inf";
+
       case StrSchema:   value;
       case BoolSchema:  value;
       case AnySchema:   value;

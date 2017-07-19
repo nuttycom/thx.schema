@@ -25,11 +25,14 @@ class SchemaDSL {
   // Constructors for object properties.
   //
 
-  public static function liftPS<E, X, O, A>(s: PropSchema<E, X, O, A>): PropsBuilder<E, X, O, A>
+  inline public static function liftPS<E, X, O, A>(s: PropSchema<E, X, O, A>): PropsBuilder<E, X, O, A>
     return Ap(s, Pure(function(a: A) return a));
 
-  public static function required<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A): PropsBuilder<E, X, O, A>
-    return liftPS(Required(fieldName, valueSchema, accessor, None));
+  inline public static function requiredS<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A): PropSchema<E, X, O, A>
+    return Required(fieldName, valueSchema, accessor, None);
+
+  inline public static function required<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> A): PropsBuilder<E, X, O, A>
+    return liftPS(requiredS(fieldName, valueSchema, accessor));
 
   public static function optional<E, X, O, A>(fieldName: String, valueSchema: AnnotatedSchema<E, X, A>, accessor: O -> Option<A>): PropsBuilder<E, X, O, Option<A>>
     return liftPS(Optional(fieldName, valueSchema, accessor));
