@@ -123,7 +123,7 @@ class SchemaDynamicExtensions {
       var parsedOpt: VNel<ParseError<E>, I> = switch ps {
         case Required(fieldName, valueSchema, _, dflt):
           parseOptionalProperty(v, fieldName, parseDynamicAt.bind(valueSchema, path / fieldName, err, _)).flatMapV.fn(
-            _.orElse(dflt).toSuccessNel(new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
+            _.orElse(dflt).toLazySuccessNel(() -> new ParseError(err('Value $v does not contain field $fieldName and no default was available.'), path))
           );
 
         case Optional(fieldName, valueSchema, _):
