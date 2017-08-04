@@ -55,7 +55,10 @@ class AnnotatedSchema<E, X, A> {
     this.schema = schema;
   }
 
-  // FIXME: This should take SPath -> X -> Y
+  public function annotate<Y>(loc: SPath, f: SPath -> X -> Y): AnnotatedSchema<E, Y, A> {
+    return new AnnotatedSchema(f(loc, annotation), SchemaFExtensions.annotate(schema, loc, f));
+  }
+
   public function mapAnnotation<Y>(f: X -> Y): AnnotatedSchema<E, Y, A> {
     return new AnnotatedSchema(f(annotation), SchemaFExtensions.mapAnnotation(schema, f));
   }

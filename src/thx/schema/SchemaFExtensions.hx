@@ -46,6 +46,24 @@ class SchemaFExtensions {
       case _: false;
     };
 
+  public static function annotate<E, X, Y, A>(schema: SchemaF<E, X, A>, loc: SPath, f: SPath -> X -> Y): SchemaF<E, Y, A> {
+    return switch schema {
+      case BoolSchema:  BoolSchema;
+      case FloatSchema: FloatSchema;
+      case IntSchema:   IntSchema;
+      case StrSchema:   StrSchema;
+      case AnySchema:   AnySchema;
+      case ConstSchema(a):  ConstSchema(a);
+      case ObjectSchema(propSchema):  ObjectSchema(ObjectSchemaExtensions.annotate(propSchema, loc, f));
+      case ArraySchema(elemSchema):   ArraySchema(elemSchema.annotate(loc * 0, f));
+      case MapSchema(elemSchema):     MapSchema(elemSchema.annotate(loc / "*", f));
+      case OneOfSchema(alternatives): OneOfSchema(alternatives.map(AlternativeExtensions.annotate.bind(_, loc, f)));
+      case ParseSchema(base, p, q):   ParseSchema(annotate(base, loc, f), p, q);
+      case LazySchema(base):          LazySchema(function() return annotate(base(), loc, f));
+      case MetaSchema(p, ms, sf, g):  MetaSchema(p, ms.annotate(loc, f), b -> ObjectSchemaExtensions.annotate(sf(b), loc, f), g);
+    }
+  }
+
   public static function mapAnnotation<E, X, Y, A>(schema: SchemaF<E, X, A>, f: X -> Y): SchemaF<E, Y, A> {
     return switch schema {
       case BoolSchema:  BoolSchema;
@@ -125,6 +143,13 @@ class ObjectSchemaExtensions {
       case Ap(s, k): Ap(s, ap(o, map(k, flip)));
     };
 
+  public static function annotate<E, X, Y, O, A>(o: PropsBuilder<E, X, O, A>, loc: SPath, f: SPath -> X -> Y): PropsBuilder<E, Y, O, A> {
+    return switch o {
+      case Ap(s, k): Ap(PropSchemaExtensions.annotate(s, loc, f), annotate(k, loc, f));
+      case Pure(g): Pure(g);
+    };
+  }
+
   public static function mapAnnotation<E, X, Y, O, A>(o: PropsBuilder<E, X, O, A>, f: X -> Y): PropsBuilder<E, Y, O, A>
     return switch o {
       case Ap(s, k): Ap(PropSchemaExtensions.mapAnnotation(s, f), mapAnnotation(k, f));
@@ -144,6 +169,12 @@ class PropSchemaExtensions {
       case Required(n, s, a, d): Required(n, s, a.compose(f), d);
       case Optional(n, s, a): Optional(n, s, a.compose(f));
     };
+
+  public static function annotate<E, X, Y, O, A>(s: PropSchema<E, X, O, A>, loc: SPath, f: SPath -> X -> Y): PropSchema<E, Y, O, A>
+    return switch s {
+      case Required(n, s, a, d): Required(n, s.annotate(loc / n, f), a, d);
+      case Optional(n, s, a): Optional(n, s.annotate(loc / n, f), a);
+    }
 
   public static function mapAnnotation<E, X, Y, O, A>(s: PropSchema<E, X, O, A>, f: X -> Y): PropSchema<E, Y, O, A>
     return switch s {
@@ -167,6 +198,12 @@ class AlternativeExtensions {
   public static function isConstantAlt<E, X, A>(alt: Alternative<E, X, A>): Bool
     return switch alt {
       case Prism(_, s, _, _, _): SchemaFExtensions.isConstant(s.schema);
+    };
+  
+  public static function annotate<E, X, Y, A>(alt: Alternative<E, X, A>, loc: SPath, f: SPath -> X -> Y): Alternative<E, Y, A>
+    return switch alt {
+      case Prism(id, s, x, p, q): 
+        Prism(id, s.annotate(loc ^ id, f), f(loc ^ id, x), p, q);
     };
 
   public static function mapAnnotation<E, X, Y, A>(alt: Alternative<E, X, A>, f: X -> Y): Alternative<E, Y, A>

@@ -67,7 +67,7 @@ class SchemaDynamicExtensions {
             function(s: String) {
               var id0 = s.toLowerCase();
               return switch alternatives.findOption.fn(_.id().toLowerCase() == id0) {
-                case Some(Prism(id, altSchema, _, f, _)): parseDynamicAt(altSchema, path / id, err, v).map(f);
+                case Some(Prism(id, altSchema, _, f, _)): parseDynamicAt(altSchema, path ^ id, err, v).map(f);
                 case None: failNel('Value ${v} cannot be mapped to any alternative among [${alternatives.map.fn(_.id()).join(", ")}]');
               }
             }
